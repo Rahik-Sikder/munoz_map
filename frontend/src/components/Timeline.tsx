@@ -1,0 +1,104 @@
+import { useMemo } from 'react';
+import type { Entry } from '../types';
+
+interface TimelineProps {
+  entries: Entry[];
+  onEntryClick?: (entry: Entry) => void;
+  selectedEntryId?: string;
+}
+
+export default function Timeline({
+  entries,
+  onEntryClick,
+  selectedEntryId,
+}: TimelineProps) {
+  // Sort entries by start date
+  const sortedEntries = useMemo(() => {
+    return [...entries].sort((a, b) => {
+      return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+    });
+  }, [entries]);
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+    });
+  };
+
+  if (entries.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full text-aged-ink p-4">
+        <p className="text-sm">No entries to display</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full overflow-y-auto bg-white p-3">
+      <div className="relative">
+        {/* Timeline line */}
+        <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-map-border" />
+
+        {/* Timeline entries */}
+        <div className="space-y-3">
+          {sortedEntries.map((entry) => {
+            const isSelected = entry.id === selectedEntryId;
+
+            return (
+              <div
+                key={entry.id}
+                className={`relative pl-8 cursor-pointer transition-all ${
+                  isSelected
+                    ? 'transform scale-105'
+                    : 'hover:transform hover:scale-102'
+                }`}
+                onClick={() => onEntryClick?.(entry)}
+              >
+                {/* Timeline dot */}
+                <div
+                  className={`absolute left-2 w-3 h-3 rounded-full border-2 ${
+                    isSelected
+                      ? 'bg-colonial-gold border-colonial-gold'
+                      : 'bg-parchment border-map-border'
+                  }`}
+                />
+
+                {/* Entry card - Compact */}
+                <div
+                  className={`bg-parchment rounded p-2 shadow border transition-colors ${
+                    isSelected
+                      ? 'border-colonial-gold'
+                      : 'border-map-border hover:border-colonial-brown'
+                  }`}
+                >
+                  {/* Date - Compact */}
+                  <div className="text-[10px] font-semibold text-colonial-red mb-1">
+                    {formatDate(entry.startDate)}
+                  </div>
+
+                  {/* Object name - Compact */}
+                  <h4 className="font-serif font-bold text-colonial-brown text-xs mb-1 line-clamp-1">
+                    {entry.object?.name || 'Unknown'}
+                  </h4>
+
+                  {/* Location - Compact */}
+                  <p className="text-[10px] text-aged-ink mb-1 line-clamp-1">
+                    {entry.locationName}
+                  </p>
+
+                  {/* Object type badge - Small */}
+                  {entry.object?.type && (
+                    <span className="inline-block bg-colonial-blue text-parchment px-1.5 py-0.5 rounded text-[9px]">
+                      {entry.object.type}
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}

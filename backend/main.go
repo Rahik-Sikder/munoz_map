@@ -54,12 +54,25 @@ func main() {
 		// Public routes
 		r.Get("/objects", server.GetAllObjects)
 		r.Get("/objects/{id}", server.GetObjectByID)
+		r.Get("/entries", server.GetAllEntries)
+		r.Get("/entries/{id}", server.GetEntryByID)
 
 		// Protected routes (require authentication)
 		r.Group(func(r chi.Router) {
 			r.Use(AuthMiddleware)
+
+			// Object operations
 			r.Post("/objects", server.CreateObject)
+			r.Put("/objects/{id}", server.UpdateObject)
+			r.Delete("/objects/{id}", server.DeleteObject)
+
+			// Entry operations (nested under objects)
 			r.Post("/objects/{id}/entries", server.CreateEntry)
+
+			// Entry operations (top-level)
+			r.Post("/entries", server.CreateEntry)
+			r.Put("/entries/{id}", server.UpdateEntry)
+			r.Delete("/entries/{id}", server.DeleteEntry)
 		})
 	})
 

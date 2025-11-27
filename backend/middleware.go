@@ -41,11 +41,30 @@ func respondWithError(w http.ResponseWriter, code int, message string) {
 	json.NewEncoder(w).Encode(ErrorResponse{Error: message})
 }
 
-// respondWithJSON sends a JSON response
+// respondWithJSON sends a JSON response wrapped in ApiResponse format
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	if err := json.NewEncoder(w).Encode(payload); err != nil {
+
+	// Wrap payload in ApiResponse format
+	response := ApiResponse{Data: payload}
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Printf("Error encoding JSON response: %v", err)
+	}
+}
+
+// respondWithData sends a JSON response with data and an optional message
+func respondWithData(w http.ResponseWriter, code int, data interface{}, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+
+	response := ApiResponse{
+		Data:    data,
+		Message: &message,
+	}
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
 		log.Printf("Error encoding JSON response: %v", err)
 	}
 }

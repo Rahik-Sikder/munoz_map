@@ -56,6 +56,26 @@ Returns a specific object with its entries.
 }
 ```
 
+#### GET /api/entries
+Returns all entries from all objects.
+
+**Response:**
+```json
+{
+  "entries": [
+    {
+      "id": "string",
+      "lat": 0.0,
+      "lng": 0.0,
+      "date": "string",
+      "title": "string",
+      "description": "string",
+      "order": 0
+    }
+  ]
+}
+```
+
 ### Protected Endpoints (Require Authentication)
 
 Authentication is done via the `X-Admin-Key` header.
@@ -278,6 +298,9 @@ curl http://localhost:8080/api/objects
 
 # Get specific object
 curl http://localhost:8080/api/objects/columbus-1492
+
+# Get all entries
+curl http://localhost:8080/api/entries
 
 # Create new object
 curl -X POST http://localhost:8080/api/objects \
