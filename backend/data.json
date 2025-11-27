@@ -1,0 +1,53 @@
+{
+  "objects": [
+    {
+      "id": "columbus-1492",
+      "name": "Christopher Columbus",
+      "type": "Explorer",
+      "entries": [
+        {
+          "id": "entry-palos-1492",
+          "lat": 37.2315,
+          "lng": -6.8899,
+          "date": "1492-08-03",
+          "title": "Departure from Palos de la Frontera",
+          "description": "Columbus departed from the port of Palos de la Frontera, Spain, with three ships: the Niña, the Pinta, and the Santa María. This marked the beginning of his first voyage to the New World.",
+          "order": 1
+        },
+        {
+          "id": "entry-canary-1492",
+          "lat": 28.2916,
+          "lng": -16.6291,
+          "date": "1492-08-12",
+          "title": "Stop at Canary Islands",
+          "description": "The fleet stopped at the Canary Islands for repairs and supplies. The Pinta's rudder needed fixing, and they restocked provisions before continuing west into the unknown Atlantic.",
+          "order": 2
+        },
+        {
+          "id": "entry-guanahani-1492",
+          "lat": 24.0583,
+          "lng": -74.5,
+          "date": "1492-10-12",
+          "title": "First Landing in the New World",
+          "description": "Columbus landed on an island in the Bahamas, which he named San Salvador. The indigenous people called it Guanahani. This moment marked the first European contact with the Americas, changing world history forever.",
+          "order": 3
+        },
+        {
+          "id": "8b7e8203-f5dd-41f3-ac34-a58dbaf8e9b3",
+          "lat": 25,
+          "lng": -75,
+          "date": "1492-10-28",
+          "title": "Arrival in Cuba",
+          "description": "Columbus arrived at the coast of Cuba",
+          "order": 4
+        }
+      ]
+    },
+    {
+      "id": "0f6e85ff-3269-4eb9-bd90-d910970e5fd6",
+      "name": "Hernán Cortés",
+      "type": "Person",
+      "entries": []
+    }
+  ]
+}

@@ -1,3 +1,7 @@
+# Agentic coding
+*.claude*
+*CLAUDE.md
+
 # Node.js / Frontend
 node_modules/
 npm-debug.log*
