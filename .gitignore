@@ -1,0 +1,91 @@
+# Node.js / Frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+*.local
+
+# Frontend environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Go / Backend
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go test binary, built with `go test -c`
+*.test
+
+# Go output binary
+backend/server
+backend/main
+
+# Go coverage files
+*.out
+coverage.txt
+coverage.html
+
+# Go vendor directory
+vendor/
+
+# Go module cache
+go.sum.backup
+
+# Backend environment variables
+backend/.env
+backend/.env.local
+
+# IDE specific
+*.swp
+*.swo
+*~
+.project
+.settings/
+.classpath
+
+# OS specific
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Log files
+*.log
+logs/
+
+# Database files (if using SQLite in the future)
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker
+docker-compose.override.yml
+
+# Temporary files
+tmp/
+temp/
+*.tmp

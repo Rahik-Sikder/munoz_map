@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # Backend Go API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: munoz_map_backend
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - CORS_ORIGINS=http://localhost:5173
+    volumes:
+      # Mount source code for development
+      - ./backend:/app
+      # Mount data directory for persistence
+      - ./backend/data:/app/data
+    restart: unless-stopped
+    networks:
+      - munoz_map_network
+
+  # Frontend React App
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: munoz_map_frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8080
+    volumes:
+      # Mount source code for hot reload
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - munoz_map_network
+    stdin_open: true
+    tty: true
+
+networks:
+  munoz_map_network:
+    driver: bridge
+
+# Optional: Add volumes for persistent data
+volumes:
+  backend_data:
+    driver: local
