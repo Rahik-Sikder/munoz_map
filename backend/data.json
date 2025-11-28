@@ -1,169 +1,72 @@
 {
   "objects": [
     {
-      "id": "columbus-1492",
+      "id": "aa83e0b1-a917-4b8c-b037-44e8e79ac480",
       "name": "Christopher Columbus",
       "type": "person",
-      "description": "Italian explorer who completed four voyages across the Atlantic Ocean, opening the way for widespread European exploration and colonization of the Americas",
+      "description": "a guy i guess",
+      "imageUrl": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSiNgwzeD32yu34FOgQBRZYzD-gE1GqVneIHt72oT7fOrIsFVtBT425pIEcPr5VHT7tJr-7ZcW45mId4uTsDKOyvYyljcGnAQtG4Aunvak\u0026s=10",
       "entryIds": [
-        "entry-palos-1492",
-        "entry-canary-1492",
-        "entry-guanahani-1492",
-        "8b7e8203-f5dd-41f3-ac34-a58dbaf8e9b3"
+        "205f4c7e-b439-4f93-8d9d-cd1be9b32e1c",
+        "37fe910b-c92c-43c2-a21c-30b6b40e11d9",
+        "7c0ddf22-dbf6-42c6-b0bb-a4ca97f0fb18"
       ],
-      "createdAt": "2025-11-27T00:00:00Z",
-      "updatedAt": "2025-11-27T00:00:00Z"
-    },
-    {
-      "id": "0f6e85ff-3269-4eb9-bd90-d910970e5fd6",
-      "name": "Hernán Cortés",
-      "type": "person",
-      "description": "Spanish Conquistador who led an expedition that caused the fall of the Aztec Empire and brought large portions of what is now mainland Mexico under the rule of the King of Castile",
-      "entryIds": [
-        "471a3d8d-1ec5-4221-87b2-9bf8fc7a0690"
-      ],
-      "createdAt": "2025-11-27T00:00:00Z",
-      "updatedAt": "2025-11-28T16:17:19Z"
-    },
-    {
-      "id": "8d3e3f27-8b36-4cce-a552-57556300b0e9",
-      "name": "Francisco Pizarro",
-      "type": "person",
-      "description": "Spanish conquistador who conquered the Incan Empire",
-      "entryIds": [
-        "60414383-3c51-4af7-8a8f-7acd58a817ca"
-      ],
-      "createdAt": "2025-11-27T17:03:57Z",
-      "updatedAt": "2025-11-27T17:04:14Z"
+      "createdAt": "2025-11-28T16:37:24Z",
+      "updatedAt": "2025-11-28T16:46:14Z"
     }
   ],
   "entries": [
     {
-      "id": "entry-palos-1492",
-      "objectId": "columbus-1492",
+      "id": "205f4c7e-b439-4f93-8d9d-cd1be9b32e1c",
+      "objectId": "aa83e0b1-a917-4b8c-b037-44e8e79ac480",
       "location": {
-        "latitude": 37.1288,
-        "longitude": -6.6577
+        "latitude": 44.4063,
+        "longitude": 8.9319
       },
-      "locationName": "Departure from Palos de la Frontera",
-      "startDate": "1492-08-03T00:00:00.000Z",
-      "description": "Columbus departed from the port of Palos de la Frontera, Spain, with three ships: the Niña, the Pinta, and the Santa María. This marked the beginning of his first voyage to the New World.",
+      "locationName": "Birth of Columbus",
+      "startDate": "1451-01-01T00:00:00.000Z",
+      "description": "Genoa, Republic of Genoa. \nWas the son of Dominico Colombo, a wool comber, and Susannah Fontamarossa, his wife. Columbus was the oldest of four children, having two brothers, Bartholomew and Giacomo, and one sister.",
       "sources": [
-        "Historia de las Indias by Bartolomé de las Casas"
+        "Irving, PDF p. 1-3"
       ],
-      "tags": [
-        "voyage",
-        "departure",
-        "spain",
-        "first-voyage"
-      ],
-      "createdAt": "2025-11-27T00:00:00Z",
-      "updatedAt": "2025-11-28T16:11:25Z"
-    },
-    {
-      "id": "entry-canary-1492",
-      "objectId": "columbus-1492",
-      "location": {
-        "latitude": 28.2916,
-        "longitude": -16.6291
-      },
-      "locationName": "Stop at Canary Islands",
-      "startDate": "1492-08-12",
-      "endDate": "1492-09-06",
-      "description": "The fleet stopped at the Canary Islands for repairs and supplies. The Pinta's rudder needed fixing, and they restocked provisions before continuing west into the unknown Atlantic.",
-      "sources": [
-        "Journal of Christopher Columbus (1492-1493)"
-      ],
-      "tags": [
-        "voyage",
-        "canary-islands",
-        "repairs",
-        "first-voyage"
-      ],
-      "createdAt": "2025-11-27T00:00:00Z",
-      "updatedAt": "2025-11-27T00:00:00Z"
-    },
-    {
-      "id": "entry-guanahani-1492",
-      "objectId": "columbus-1492",
-      "location": {
-        "latitude": 24.0583,
-        "longitude": -74.5
-      },
-      "locationName": "First Landing in the New World",
-      "startDate": "1492-10-12",
-      "description": "Columbus landed on an island in the Bahamas, which he named San Salvador. The indigenous people called it Guanahani. This moment marked the first European contact with the Americas, changing world history forever.",
-      "sources": [
-        "Journal of Christopher Columbus (1492-1493)",
-        "The Diario of Christopher Columbus's First Voyage to America"
-      ],
-      "tags": [
-        "voyage",
-        "bahamas",
-        "first-contact",
-        "historical-milestone",
-        "first-voyage"
-      ],
-      "createdAt": "2025-11-27T00:00:00Z",
-      "updatedAt": "2025-11-27T00:00:00Z"
-    },
-    {
-      "id": "8b7e8203-f5dd-41f3-ac34-a58dbaf8e9b3",
-      "objectId": "columbus-1492",
-      "location": {
-        "latitude": 25,
-        "longitude": -75
-      },
-      "locationName": "Arrival in Cuba",
-      "startDate": "1492-10-28",
-      "description": "Columbus arrived at the coast of Cuba, believing it to be part of mainland Asia. He explored the northern coast of Cuba for several weeks.",
-      "sources": [
-        "Journal of Christopher Columbus (1492-1493)"
-      ],
-      "tags": [
-        "voyage",
-        "cuba",
-        "exploration",
-        "first-voyage"
-      ],
-      "createdAt": "2025-11-27T00:00:00Z",
-      "updatedAt": "2025-11-27T00:00:00Z"
-    },
-    {
-      "id": "60414383-3c51-4af7-8a8f-7acd58a817ca",
-      "objectId": "8d3e3f27-8b36-4cce-a552-57556300b0e9",
-      "location": {
-        "latitude": -12.0464,
-        "longitude": -77.0428
-      },
-      "locationName": "Capture of Atahualpa",
-      "startDate": "1532-11-16",
-      "description": "Pizarro captured the Incan emperor Atahualpa at Cajamarca",
-      "sources": [
-        "Chronicle of Peru by Pedro Cieza de León"
-      ],
-      "tags": [
-        "conquest",
-        "peru",
-        "inca"
-      ],
-      "createdAt": "2025-11-27T17:04:14Z",
-      "updatedAt": "2025-11-27T17:04:14Z"
-    },
-    {
-      "id": "471a3d8d-1ec5-4221-87b2-9bf8fc7a0690",
-      "objectId": "0f6e85ff-3269-4eb9-bd90-d910970e5fd6",
-      "location": {
-        "latitude": 19.6054,
-        "longitude": -99.3604
-      },
-      "locationName": "Tenochtitlan",
-      "startDate": "2025-08-13T00:00:00.000Z",
-      "description": "Siege of Tenochtitlan with the Txcala",
-      "sources": [],
       "tags": [],
-      "createdAt": "2025-11-28T16:17:19Z",
-      "updatedAt": "2025-11-28T16:17:19Z"
+      "createdAt": "2025-11-28T16:40:01Z",
+      "updatedAt": "2025-11-28T16:43:36Z"
+    },
+    {
+      "id": "37fe910b-c92c-43c2-a21c-30b6b40e11d9",
+      "objectId": "aa83e0b1-a917-4b8c-b037-44e8e79ac480",
+      "location": {
+        "latitude": 38.5551,
+        "longitude": -9.0967
+      },
+      "locationName": "Columbus proposes western route to King João II of Portuga",
+      "startDate": "1484-01-01T00:00:00.000Z",
+      "description": "Lisbon, Portugal.",
+      "sources": [
+        "Irving, PDF pp. 10–11"
+      ],
+      "tags": [],
+      "createdAt": "2025-11-28T16:43:21Z",
+      "updatedAt": "2025-11-28T16:43:21Z"
+    },
+    {
+      "id": "7c0ddf22-dbf6-42c6-b0bb-a4ca97f0fb18",
+      "objectId": "aa83e0b1-a917-4b8c-b037-44e8e79ac480",
+      "location": {
+        "latitude": 37.3352,
+        "longitude": -5.9326
+      },
+      "locationName": "Columbus Petitions to Ferdinand \u0026 Isabella",
+      "startDate": "1486-01-01T00:00:00.000Z",
+      "endDate": "1491-01-01T00:00:00.000Z",
+      "description": "Córdoba; Salamanca; Seville",
+      "sources": [
+        "(Irving, PDF pp. 14–18)"
+      ],
+      "tags": [],
+      "createdAt": "2025-11-28T16:46:14Z",
+      "updatedAt": "2025-11-28T16:46:24Z"
     }
   ]
 }

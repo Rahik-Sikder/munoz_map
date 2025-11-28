@@ -420,7 +420,7 @@ export default function MapView() {
             onPositionChange={handleObjectWindowPositionChange}
             onSizeChange={handleObjectWindowSizeChange}
             width="400px"
-            height="400px"
+            height="450px"
             title={selectedObject.name}
             onClose={() => handleCloseWindow('objectWindow')}
             onMinimize={() => handleMinimizeWindow('objectWindow')}
