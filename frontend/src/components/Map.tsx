@@ -129,8 +129,9 @@ export default function Map({
       />
 
       {entries.map((entry) => {
-        const isSelectedObject =
-          selectedObjectId && entry.objectId === selectedObjectId;
+        const isSelectedObject = Boolean(
+          selectedObjectId && entry.objectId === selectedObjectId
+        );
         const isSelected = entry.id === selectedEntryId;
 
         return (

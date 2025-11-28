@@ -37,9 +37,9 @@ async function apiFetch<T>(
   const adminKey = authUtils.getAdminKey();
 
   // Build headers
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...options?.headers,
+    ...(options?.headers as Record<string, string>),
   };
 
   // Add X-Admin-Key header for write operations (POST, PUT, DELETE)

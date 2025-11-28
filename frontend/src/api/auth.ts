@@ -1,8 +1,10 @@
 // Authentication utilities for admin panel
 
-const AUTH_STORAGE_KEY = 'adminKey';
-const VALID_PASSWORD = 'munoz123';
-const ADMIN_KEY = 'dev-key-123';
+
+const ADMIN_KEY = import.meta.env.ADMIN_KEY || 'dev-key-123';
+const VALID_PASSWORD = import.meta.env.VALID_PASSWORD || 'munoz123';
+const AUTH_STORAGE_KEY = import.meta.env.AUTH_STORAGE_KEY || 'adminKey';
+
 
 export const authUtils = {
   /**

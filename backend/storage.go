@@ -8,7 +8,14 @@ import (
 	"time"
 )
 
-const dataFile = "data.json"
+var dataFile = getDataFilePath()
+
+func getDataFilePath() string {
+	if path := os.Getenv("DATA_PATH"); path != "" {
+		return path
+	}
+	return "data.json"  // default for local dev
+}
 
 // Storage handles thread-safe JSON file operations
 type Storage struct {
