@@ -24,7 +24,7 @@ export default function MapView() {
   const [openEntryWindows, setOpenEntryWindows] = useState<Set<string>>(new Set());
 
   // Selected entry state (for marker and timeline selection)
-  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
+  const [selectedEntryId, setSelectedEntryId] = useState<string | undefined>(undefined);
 
   // Map target state (for zooming to entry locations)
   const [mapTarget, setMapTarget] = useState<{lat: number, lng: number, zoom: number} | null>(null);
@@ -120,7 +120,7 @@ export default function MapView() {
     setMapTarget({
       lat: entry.location.latitude,
       lng: entry.location.longitude,
-      zoom: 7  // Subtle zoom level
+      zoom: 6  // Subtle zoom level
     });
     setOpenEntryWindows((prev) => new Set(prev).add(entry.id));
   }, []);
@@ -142,16 +142,19 @@ export default function MapView() {
       next.delete(entryId);
       return next;
     });
+    setMapTarget(null);
   }, []);
 
   // Object selection
   const handleObjectSelect = useCallback((object: HistoricalObject) => {
     setSelectedObject(object);
+    setMapTarget(null);
   }, []);
 
   const handleViewObjectFromEntry = useCallback((object: HistoricalObject) => {
     setSelectedObject(object);
     setShowTimeline(true); // Show timeline when viewing object from entry
+    setMapTarget(null);
   }, []);
 
   const handleToggleObjectBrowser = useCallback(() => {
@@ -396,7 +399,6 @@ export default function MapView() {
             onMinimize={() => handleMinimizeWindow('objectBrowser')}
             showCloseButton={true}
             showMinimizeButton={true}
-            icon={<span className="text-lg">🗺️</span>}
             zIndex={10}
           >
             <ObjectBrowser
@@ -424,7 +426,6 @@ export default function MapView() {
             onMinimize={() => handleMinimizeWindow('objectWindow')}
             showCloseButton={true}
             showMinimizeButton={true}
-            icon={<span className="text-lg">📦</span>}
             zIndex={10}
           >
             <ObjectWindow
@@ -445,13 +446,12 @@ export default function MapView() {
             onPositionChange={handleTimelinePositionChange}
             onSizeChange={handleTimelineSizeChange}
             width="400px"
-            height="500px"
+            height="400px"
             title={`Timeline: ${selectedObject.name}`}
             onClose={() => handleCloseWindow('timeline')}
             onMinimize={() => handleMinimizeWindow('timeline')}
             showCloseButton={true}
             showMinimizeButton={true}
-            icon={<span className="text-lg">📅</span>}
             zIndex={10}
           >
             <Timeline
@@ -481,7 +481,6 @@ export default function MapView() {
               onClose={() => handleCloseEntryWindow(entry.id)}
               showCloseButton={true}
               showMinimizeButton={false}
-              icon={<span className="text-lg">📄</span>}
               zIndex={20 + index}
               className={`translate-x-${index * 30}`}
             >

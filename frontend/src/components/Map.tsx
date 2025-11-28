@@ -24,15 +24,6 @@ const createCustomIcon = (isSelected: boolean, isSelectedObject: boolean) => {
   });
 };
 
-// Arrow icon factory for path direction indicators
-const createArrowIcon = (rotation: number) => {
-  return L.divIcon({
-    className: 'arrow-icon',
-    html: `<div style="transform: rotate(${rotation}deg); font-size: 16px; color: #5C4033;">▶</div>`,
-    iconSize: [16, 16],
-    iconAnchor: [8, 8],
-  });
-};
 
 // Helper function to get chronological path from entries
 const getChronologicalPath = (entries: Entry[]): [number, number][] => {
@@ -131,9 +122,10 @@ export default function Map({
       scrollWheelZoom={true}
     >
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        maxZoom={19}
+        attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.'
+        url="https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}.png"
+        maxZoom={18}
+        className="vintage-map-tiles"
       />
 
       {entries.map((entry) => {

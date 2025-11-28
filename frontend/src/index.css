@@ -40,6 +40,11 @@
   color: #000 !important;
 }
 
+/* Subtle vintage/papery filter for map tiles */
+.vintage-map-tiles {
+  filter: sepia(0.16) contrast(0.96) brightness(1.03) saturate(0.88);
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
