@@ -1,12 +1,16 @@
-import type { ReactNode } from 'react';
+import { useState, useRef, useEffect, type ReactNode, type MouseEvent } from 'react';
 
 interface FloatingWindowProps {
   children: ReactNode;
   id: string;
   title: string;
   position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  customPosition?: { x: number; y: number };
   width?: string;
-  maxHeight?: string;
+  height?: string;
+  customSize?: { width: number; height: number };
+  onPositionChange?: (position: { x: number; y: number }) => void;
+  onSizeChange?: (size: { width: number; height: number }) => void;
   onClose?: () => void;
   showCloseButton?: boolean;
   onMinimize?: () => void;
@@ -22,8 +26,12 @@ export default function FloatingWindow({
   id,
   title,
   position = 'top-right',
+  customPosition,
   width = 'w-80',
-  maxHeight = 'max-h-96',
+  height,
+  customSize,
+  onPositionChange,
+  onSizeChange,
   onClose,
   showCloseButton = true,
   onMinimize,
@@ -33,24 +41,131 @@ export default function FloatingWindow({
   zIndex = 10,
   className = '',
 }: FloatingWindowProps) {
-  // Position mapping
-  const positionClasses = {
-    'top-left': 'top-6 left-6',
-    'top-right': 'top-6 right-6',
-    'bottom-left': 'bottom-6 left-6',
-    'bottom-right': 'bottom-6 right-6',
+  const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
+  const windowRef = useRef<HTMLDivElement>(null);
+
+  // Position mapping for initial positions
+  const positionPresets = {
+    'top-left': { x: 24, y: 24 },
+    'top-right': { x: window.innerWidth - 400, y: 24 },
+    'bottom-left': { x: 24, y: window.innerHeight - 500 },
+    'bottom-right': { x: window.innerWidth - 400, y: window.innerHeight - 500 },
   };
 
-  const positionClass = positionClasses[position];
+  // Use custom position if provided, otherwise use preset
+  const currentPosition = customPosition || positionPresets[position];
+
+  // Default sizes (convert Tailwind classes to pixels)
+  const defaultWidth = 320; // w-80 = 320px
+  const defaultHeight = 400;
+  const currentSize = customSize || { width: defaultWidth, height: defaultHeight };
+
+  const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
+    // Only start drag if clicking on header (not buttons)
+    if ((e.target as HTMLElement).closest('button')) {
+      return;
+    }
+
+    setIsDragging(true);
+    setDragOffset({
+      x: e.clientX - currentPosition.x,
+      y: e.clientY - currentPosition.y,
+    });
+  };
+
+  const handleResizeMouseDown = (e: MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    setIsResizing(true);
+    setResizeStart({
+      x: e.clientX,
+      y: e.clientY,
+      width: windowRef.current?.offsetWidth || currentSize.width,
+      height: windowRef.current?.offsetHeight || currentSize.height,
+    });
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: globalThis.MouseEvent) => {
+      if (isDragging) {
+        const newX = e.clientX - dragOffset.x;
+        const newY = e.clientY - dragOffset.y;
+
+        // Constrain to viewport
+        const maxX = window.innerWidth - (windowRef.current?.offsetWidth || currentSize.width);
+        const maxY = window.innerHeight - (windowRef.current?.offsetHeight || currentSize.height);
+
+        const constrainedX = Math.max(0, Math.min(newX, maxX));
+        const constrainedY = Math.max(0, Math.min(newY, maxY));
+
+        onPositionChange?.({ x: constrainedX, y: constrainedY });
+      }
+
+      if (isResizing) {
+        const deltaX = e.clientX - resizeStart.x;
+        const deltaY = e.clientY - resizeStart.y;
+
+        const newWidth = Math.max(280, resizeStart.width + deltaX); // Min width 280px
+        const newHeight = Math.max(200, resizeStart.height + deltaY); // Min height 200px
+
+        // Constrain to viewport
+        const maxWidth = window.innerWidth - currentPosition.x;
+        const maxHeight = window.innerHeight - currentPosition.y;
+
+        const constrainedWidth = Math.min(newWidth, maxWidth);
+        const constrainedHeight = Math.min(newHeight, maxHeight);
+
+        onSizeChange?.({ width: constrainedWidth, height: constrainedHeight });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      setIsResizing(false);
+    };
+
+    if (isDragging || isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, isResizing, dragOffset, resizeStart, onPositionChange, onSizeChange, currentPosition]);
+
+  // Calculate staggered offset from className if present
+  const staggerMatch = className.match(/translate-x-(\d+)/);
+  const staggerOffset = staggerMatch ? parseInt(staggerMatch[1]) : 0;
 
   return (
     <div
+      ref={windowRef}
       id={`floating-window-${id}`}
-      className={`absolute ${positionClass} ${width} ${maxHeight} bg-parchment border-2 border-map-border rounded-2xl shadow-2xl flex flex-col overflow-hidden ${className}`}
-      style={{ zIndex }}
+      className={`absolute bg-parchment border-2 border-map-border rounded-2xl shadow-2xl flex flex-col overflow-hidden ${
+        isDragging ? 'cursor-grabbing' : ''
+      }`}
+      style={{
+        zIndex,
+        left: `${currentPosition.x + staggerOffset}px`,
+        top: `${currentPosition.y + staggerOffset}px`,
+        width: customSize ? `${currentSize.width}px` : width,
+        height: customSize ? `${currentSize.height}px` : height || 'auto',
+        maxHeight: customSize ? 'none' : '90vh',
+      }}
     >
-      {/* Header */}
-      <div className="px-4 py-3 bg-colonial-brown text-parchment border-b-2 border-map-border flex items-center justify-between">
+      {/* Header - Draggable */}
+      <div
+        className={`px-4 py-3 bg-colonial-brown text-parchment border-b-2 border-map-border flex items-center justify-between ${
+          isDragging ? 'cursor-grabbing' : 'cursor-grab'
+        }`}
+        onMouseDown={handleMouseDown}
+      >
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {icon && <span className="flex-shrink-0">{icon}</span>}
           <h3 className="font-serif font-bold text-sm truncate">{title}</h3>
@@ -112,6 +227,14 @@ export default function FloatingWindow({
       {/* Body - Scrollable */}
       <div className="flex-1 overflow-y-auto">
         {children}
+      </div>
+
+      {/* Resize Handle - Bottom Right Corner */}
+      <div
+        className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize group"
+        onMouseDown={handleResizeMouseDown}
+      >
+        <div className="absolute bottom-1 right-1 w-3 h-3 border-r-2 border-b-2 border-colonial-brown opacity-40 group-hover:opacity-100 transition-opacity" />
       </div>
     </div>
   );

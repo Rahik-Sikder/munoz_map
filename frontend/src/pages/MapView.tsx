@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import Map from '../components/Map';
+import LeafletMap from '../components/Map';
+import ObjectWindow from '../components/ObjectWindow';
 import Timeline from '../components/Timeline';
 import EntryDetail from '../components/EntryDetail';
 import FloatingWindow from '../components/FloatingWindow';
@@ -12,15 +13,41 @@ export default function MapView() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
 
   // Object state
   const [objects, setObjects] = useState<HistoricalObject[]>([]);
   const [selectedObject, setSelectedObject] = useState<HistoricalObject | null>(null);
   const [showObjectBrowser, setShowObjectBrowser] = useState(true);
+  const [showTimeline, setShowTimeline] = useState(false);
 
-  // Window minimization state
+  // Entry windows state (track which entries have open windows)
+  const [openEntryWindows, setOpenEntryWindows] = useState<Set<string>>(new Set());
+
+  // Selected entry state (for marker and timeline selection)
+  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
+
+  // Map target state (for zooming to entry locations)
+  const [mapTarget, setMapTarget] = useState<{lat: number, lng: number, zoom: number} | null>(null);
+
+  // Window minimization state (only for ObjectBrowser and ObjectWindow)
   const [minimizedWindows, setMinimizedWindows] = useState<Set<string>>(new Set());
+
+  // Window positions/sizes state
+  // ObjectBrowser: persisted (remembers position/size)
+  const [objectBrowserPosition, setObjectBrowserPosition] = useState<{ x: number; y: number } | null>(null);
+  const [objectBrowserSize, setObjectBrowserSize] = useState<{ width: number; height: number } | null>(null);
+
+  // ObjectWindow: temporary (allows dragging while open, but resets when closed)
+  const [objectWindowPosition, setObjectWindowPosition] = useState<{ x: number; y: number } | null>(null);
+  const [objectWindowSize, setObjectWindowSize] = useState<{ width: number; height: number } | null>(null);
+
+  // Timeline: temporary (allows dragging while open, but resets when closed)
+  const [timelinePosition, setTimelinePosition] = useState<{ x: number; y: number } | null>(null);
+  const [timelineSize, setTimelineSize] = useState<{ width: number; height: number } | null>(null);
+
+  // Entry Windows: temporary per-window (allows dragging while open, but resets when closed)
+  const [entryWindowsPositions, setEntryWindowsPositions] = useState<Map<string, { x: number; y: number }>>(new Map());
+  const [entryWindowsSizes, setEntryWindowsSizes] = useState<Map<string, { width: number; height: number }>>(new Map());
 
   // Fetch all objects on mount
   useEffect(() => {
@@ -65,7 +92,7 @@ export default function MapView() {
 
   // Create object lookup map for O(1) access
   const objectsMap = useMemo(() => {
-    const lookupMap = new globalThis.Map<string, HistoricalObject>();
+    const lookupMap = new Map<string, HistoricalObject>();
     objects.forEach((obj) => lookupMap.set(obj.id, obj));
     return lookupMap;
   }, [objects]);
@@ -87,28 +114,52 @@ export default function MapView() {
     return Array.from(tagSet).sort();
   }, [entriesWithObjects]);
 
-  // Entry selection
+  // Entry window management
   const handleEntryClick = useCallback((entry: Entry) => {
-    setSelectedEntry(entry);
+    setSelectedEntryId(entry.id);
+    setMapTarget({
+      lat: entry.location.latitude,
+      lng: entry.location.longitude,
+      zoom: 7  // Subtle zoom level
+    });
+    setOpenEntryWindows((prev) => new Set(prev).add(entry.id));
+  }, []);
+
+  const handleCloseEntryWindow = useCallback((entryId: string) => {
+    setOpenEntryWindows((prev) => {
+      const next = new Set(prev);
+      next.delete(entryId);
+      return next;
+    });
+    // Clear position/size state to reset to defaults on next open
+    setEntryWindowsPositions((prev) => {
+      const next = new Map(prev);
+      next.delete(entryId);
+      return next;
+    });
+    setEntryWindowsSizes((prev) => {
+      const next = new Map(prev);
+      next.delete(entryId);
+      return next;
+    });
   }, []);
 
   // Object selection
   const handleObjectSelect = useCallback((object: HistoricalObject) => {
     setSelectedObject(object);
-    setSelectedEntry(null); // Clear entry selection when object changes
   }, []);
 
-  const handleClearObjectSelection = useCallback(() => {
-    setSelectedObject(null);
-  }, []);
-
-  const handleViewObjectTimeline = useCallback((object: HistoricalObject) => {
+  const handleViewObjectFromEntry = useCallback((object: HistoricalObject) => {
     setSelectedObject(object);
-    // Keep selectedEntry as-is (don't clear)
+    setShowTimeline(true); // Show timeline when viewing object from entry
   }, []);
 
   const handleToggleObjectBrowser = useCallback(() => {
     setShowObjectBrowser((prev) => !prev);
+  }, []);
+
+  const handleToggleTimeline = useCallback(() => {
+    setShowTimeline((prev) => !prev);
   }, []);
 
   // Window management
@@ -130,11 +181,18 @@ export default function MapView() {
       case 'objectBrowser':
         setShowObjectBrowser(false);
         break;
-      case 'timeline':
-        setSelectedObject(null); // Closing timeline clears object selection
+      case 'objectWindow':
+        setSelectedObject(null); // Deselect object (closes both windows)
+        setShowTimeline(false); // Hide timeline
+        setObjectWindowPosition(null); // Reset position to default
+        setObjectWindowSize(null); // Reset size to default
+        setTimelinePosition(null); // Also reset timeline position
+        setTimelineSize(null); // Also reset timeline size
         break;
-      case 'entryDetail':
-        setSelectedEntry(null);
+      case 'timeline':
+        setShowTimeline(false); // Hide timeline only
+        setTimelinePosition(null); // Reset position to default
+        setTimelineSize(null); // Reset size to default
         break;
     }
     // Also remove from minimized set if it was minimized
@@ -150,6 +208,73 @@ export default function MapView() {
     (windowId: string) => minimizedWindows.has(windowId),
     [minimizedWindows]
   );
+
+  // ObjectBrowser position/size handlers (persisted)
+  const handleObjectBrowserPositionChange = useCallback(
+    (position: { x: number; y: number }) => {
+      setObjectBrowserPosition(position);
+    },
+    []
+  );
+
+  const handleObjectBrowserSizeChange = useCallback(
+    (size: { width: number; height: number }) => {
+      setObjectBrowserSize(size);
+    },
+    []
+  );
+
+  // ObjectWindow position/size handlers (temporary)
+  const handleObjectWindowPositionChange = useCallback(
+    (position: { x: number; y: number }) => {
+      setObjectWindowPosition(position);
+    },
+    []
+  );
+
+  const handleObjectWindowSizeChange = useCallback(
+    (size: { width: number; height: number }) => {
+      setObjectWindowSize(size);
+    },
+    []
+  );
+
+  // Timeline position/size handlers (temporary)
+  const handleTimelinePositionChange = useCallback(
+    (position: { x: number; y: number }) => {
+      setTimelinePosition(position);
+    },
+    []
+  );
+
+  const handleTimelineSizeChange = useCallback(
+    (size: { width: number; height: number }) => {
+      setTimelineSize(size);
+    },
+    []
+  );
+
+  // Entry window position/size handlers (temporary per-window)
+  const handleEntryWindowPositionChange = useCallback(
+    (entryId: string, position: { x: number; y: number }) => {
+      setEntryWindowsPositions((prev) => new Map(prev).set(entryId, position));
+    },
+    []
+  );
+
+  const handleEntryWindowSizeChange = useCallback(
+    (entryId: string, size: { width: number; height: number }) => {
+      setEntryWindowsSizes((prev) => new Map(prev).set(entryId, size));
+    },
+    []
+  );
+
+  // Get open entry windows data
+  const openEntryWindowsData = useMemo(() => {
+    return Array.from(openEntryWindows)
+      .map((entryId) => entriesWithObjects.find((e) => e.id === entryId))
+      .filter((entry) => entry !== undefined) as Entry[];
+  }, [openEntryWindows, entriesWithObjects]);
 
   // Compute minimized windows array for WindowBar
   const minimizedWindowsList = useMemo(() => {
@@ -167,7 +292,15 @@ export default function MapView() {
       });
     }
 
-    if (isWindowMinimized('timeline') && selectedObject) {
+    if (isWindowMinimized('objectWindow') && selectedObject) {
+      windows.push({
+        id: 'objectWindow',
+        title: selectedObject.name,
+        icon: <span className="text-lg">📦</span>,
+      });
+    }
+
+    if (isWindowMinimized('timeline') && selectedObject && showTimeline) {
       windows.push({
         id: 'timeline',
         title: `Timeline: ${selectedObject.name}`,
@@ -175,16 +308,8 @@ export default function MapView() {
       });
     }
 
-    if (isWindowMinimized('entryDetail') && selectedEntry) {
-      windows.push({
-        id: 'entryDetail',
-        title: selectedEntry.object?.name || 'Entry Detail',
-        icon: <span className="text-lg">📄</span>,
-      });
-    }
-
     return windows;
-  }, [minimizedWindows, showObjectBrowser, selectedObject, selectedEntry, isWindowMinimized]);
+  }, [minimizedWindows, showObjectBrowser, selectedObject, showTimeline, isWindowMinimized]);
 
   if (loading) {
     return (
@@ -247,9 +372,11 @@ export default function MapView() {
       <div className="flex-1 relative">
         {/* Full-screen Map */}
         <div className="absolute inset-0 z-0">
-          <Map
+          <LeafletMap
             entries={entriesWithObjects}
             selectedObjectId={selectedObject?.id}
+            selectedEntryId={selectedEntryId}
+            mapTarget={mapTarget}
             onEntryClick={handleEntryClick}
           />
         </div>
@@ -259,8 +386,11 @@ export default function MapView() {
           <FloatingWindow
             id="objectBrowser"
             position="top-left"
-            width="w-96"
-            maxHeight="max-h-[calc(100vh-10rem)]"
+            customPosition={objectBrowserPosition || undefined}
+            customSize={objectBrowserSize || undefined}
+            onPositionChange={handleObjectBrowserPositionChange}
+            onSizeChange={handleObjectBrowserSizeChange}
+            width="384px"
             title="Historical Objects"
             onClose={() => handleCloseWindow('objectBrowser')}
             onMinimize={() => handleMinimizeWindow('objectBrowser')}
@@ -278,13 +408,44 @@ export default function MapView() {
           </FloatingWindow>
         )}
 
-        {/* Timeline (only when object selected) */}
-        {selectedObject && !isWindowMinimized('timeline') && (
+        {/* ObjectWindow (shows object info when object selected) */}
+        {selectedObject && !isWindowMinimized('objectWindow') && (
+          <FloatingWindow
+            id="objectWindow"
+            position="top-right"
+            customPosition={objectWindowPosition || undefined}
+            customSize={objectWindowSize || undefined}
+            onPositionChange={handleObjectWindowPositionChange}
+            onSizeChange={handleObjectWindowSizeChange}
+            width="400px"
+            height="400px"
+            title={selectedObject.name}
+            onClose={() => handleCloseWindow('objectWindow')}
+            onMinimize={() => handleMinimizeWindow('objectWindow')}
+            showCloseButton={true}
+            showMinimizeButton={true}
+            icon={<span className="text-lg">📦</span>}
+            zIndex={10}
+          >
+            <ObjectWindow
+              object={selectedObject}
+              onToggleTimeline={handleToggleTimeline}
+              showTimeline={showTimeline}
+            />
+          </FloatingWindow>
+        )}
+
+        {/* Timeline (shows timeline for selected object when enabled) */}
+        {selectedObject && showTimeline && !isWindowMinimized('timeline') && (
           <FloatingWindow
             id="timeline"
-            position="top-right"
-            width="w-80"
-            maxHeight="max-h-[calc(100vh-10rem)]"
+            position="bottom-right"
+            customPosition={timelinePosition || undefined}
+            customSize={timelineSize || undefined}
+            onPositionChange={handleTimelinePositionChange}
+            onSizeChange={handleTimelineSizeChange}
+            width="400px"
+            height="500px"
             title={`Timeline: ${selectedObject.name}`}
             onClose={() => handleCloseWindow('timeline')}
             onMinimize={() => handleMinimizeWindow('timeline')}
@@ -294,37 +455,43 @@ export default function MapView() {
             zIndex={10}
           >
             <Timeline
-              entries={entriesWithObjects}
+              entries={entriesWithObjects.filter(e => e.objectId === selectedObject.id)}
               selectedObject={selectedObject}
+              selectedEntryId={selectedEntryId}
               onEntryClick={handleEntryClick}
-              selectedEntryId={selectedEntry?.id}
-              onClearObjectSelection={handleClearObjectSelection}
             />
           </FloatingWindow>
         )}
 
-        {/* EntryDetail (when entry selected) */}
-        {selectedEntry && !isWindowMinimized('entryDetail') && (
-          <FloatingWindow
-            id="entryDetail"
-            position="bottom-left"
-            width="w-96"
-            maxHeight="max-h-[calc(100vh-10rem)]"
-            title={selectedEntry.object?.name || 'Entry Detail'}
-            onClose={() => handleCloseWindow('entryDetail')}
-            onMinimize={() => handleMinimizeWindow('entryDetail')}
-            showCloseButton={true}
-            showMinimizeButton={true}
-            icon={<span className="text-lg">📄</span>}
-            zIndex={20}
-          >
-            <EntryDetail
-              entry={selectedEntry}
-              onClose={() => setSelectedEntry(null)}
-              onViewObjectTimeline={handleViewObjectTimeline}
-            />
-          </FloatingWindow>
-        )}
+        {/* Entry Windows (multiple can be open) */}
+        {openEntryWindowsData.map((entry, index) => {
+          if (!entry) return null;
+          return (
+            <FloatingWindow
+              key={entry.id}
+              id={`entry-${entry.id}`}
+              position="bottom-left"
+              customPosition={entryWindowsPositions.get(entry.id)}
+              customSize={entryWindowsSizes.get(entry.id)}
+              onPositionChange={(pos) => handleEntryWindowPositionChange(entry.id, pos)}
+              onSizeChange={(size) => handleEntryWindowSizeChange(entry.id, size)}
+              width="500px"
+              height="400px"
+              title={entry.object?.name || 'Entry Detail'}
+              onClose={() => handleCloseEntryWindow(entry.id)}
+              showCloseButton={true}
+              showMinimizeButton={false}
+              icon={<span className="text-lg">📄</span>}
+              zIndex={20 + index}
+              className={`translate-x-${index * 30}`}
+            >
+              <EntryDetail
+                entry={entry}
+                onViewObjectTimeline={handleViewObjectFromEntry}
+              />
+            </FloatingWindow>
+          );
+        })}
       </div>
 
       {/* WindowBar at bottom - only visible when windows are minimized */}

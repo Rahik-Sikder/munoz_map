@@ -1,20 +1,51 @@
 import { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import type { Entry } from '../types';
 import L from 'leaflet';
 
-// Fix for default marker icons in react-leaflet
-// This is needed because webpack/vite doesn't bundle the marker images correctly
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-});
+// Custom marker icon factory
+const createCustomIcon = (isSelected: boolean, isSelectedObject: boolean) => {
+  const size = isSelected ? 32 : 20;
+  const color = isSelectedObject ? '#D4AF37' : '#5C4033';
+
+  return L.divIcon({
+    className: 'custom-marker',
+    html: `<div style="
+      width: ${size}px;
+      height: ${size}px;
+      background-color: ${color};
+      border: 2px solid white;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    "></div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+};
+
+// Arrow icon factory for path direction indicators
+const createArrowIcon = (rotation: number) => {
+  return L.divIcon({
+    className: 'arrow-icon',
+    html: `<div style="transform: rotate(${rotation}deg); font-size: 16px; color: #5C4033;">▶</div>`,
+    iconSize: [16, 16],
+    iconAnchor: [8, 8],
+  });
+};
+
+// Helper function to get chronological path from entries
+const getChronologicalPath = (entries: Entry[]): [number, number][] => {
+  return entries
+    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+    .map(entry => [entry.location.latitude, entry.location.longitude]);
+};
 
 interface MapProps {
   entries: Entry[];
   selectedObjectId?: string;
+  selectedEntryId?: string | null;
+  mapTarget?: {lat: number, lng: number, zoom: number} | null;
   onEntryClick?: (entry: Entry) => void;
   center?: [number, number];
   zoom?: number;
@@ -40,9 +71,48 @@ function MapBounds({ entries }: { entries: Entry[] }) {
   return null;
 }
 
+// Component to handle map zoom and centering when entry is selected
+function MapController({ target }: { target?: {lat: number, lng: number, zoom: number} | null }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (target) {
+      map.flyTo([target.lat, target.lng], target.zoom, {
+        duration: 1.5,
+        easeLinearity: 0.25
+      });
+    }
+  }, [target, map]);
+
+  return null;
+}
+
+// Component to render chronological path with directional arrows
+function PathLine({ entries }: { entries: Entry[] }) {
+  const path = getChronologicalPath(entries);
+
+  if (path.length < 2) return null;
+
+  return (
+    <>
+      <Polyline
+        positions={path}
+        pathOptions={{
+          color: '#5C4033',
+          weight: 2,
+          opacity: 0.6
+        }}
+      />
+      
+    </>
+  );
+}
+
 export default function Map({
   entries,
   selectedObjectId,
+  selectedEntryId,
+  mapTarget,
   onEntryClick,
   center = [20, -80], // Default to Caribbean/Central America region
   zoom = 5,
@@ -69,16 +139,17 @@ export default function Map({
       {entries.map((entry) => {
         const isSelectedObject =
           selectedObjectId && entry.objectId === selectedObjectId;
+        const isSelected = entry.id === selectedEntryId;
 
         return (
           <Marker
             key={entry.id}
             position={[entry.location.latitude, entry.location.longitude]}
+            icon={createCustomIcon(isSelected, isSelectedObject)}
             eventHandlers={{
               click: () => onEntryClick?.(entry),
             }}
-            opacity={isSelectedObject ? 1 : 0.4}
-            zIndexOffset={isSelectedObject ? 1000 : 0}
+            zIndexOffset={isSelected ? 1000 : isSelectedObject ? 500 : 0}
           >
             <Popup>
               <div className="min-w-[200px]">
@@ -98,7 +169,13 @@ export default function Map({
         );
       })}
 
+      {/* Chronological path with arrows (only for selected object) */}
+      {selectedObjectId && entries.length > 1 && (
+        <PathLine entries={entries.filter(e => e.objectId === selectedObjectId)} />
+      )}
+
       {entries.length > 0 && <MapBounds entries={entries} />}
+      <MapController target={mapTarget} />
     </MapContainer>
   );
 }

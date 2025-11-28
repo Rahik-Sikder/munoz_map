@@ -2,13 +2,11 @@ import type { Entry, HistoricalObject } from '../types';
 
 interface EntryDetailProps {
   entry: Entry | null;
-  onClose?: () => void;
   onViewObjectTimeline?: (object: HistoricalObject) => void;
 }
 
 export default function EntryDetail({
   entry,
-  onClose,
   onViewObjectTimeline,
 }: EntryDetailProps) {
   if (!entry) {
@@ -30,41 +28,18 @@ export default function EntryDetail({
   return (
     <div className="h-full overflow-y-auto bg-parchment p-6">
       <div className="max-w-2xl mx-auto">
-        {/* Header with close button */}
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <h2 className="text-2xl font-serif font-bold text-colonial-brown mb-2">
-              {entry.object?.name || 'Unknown Object'}
-            </h2>
-            <p className="text-sm text-sepia">
-              {entry.object?.type && (
-                <span className="inline-block bg-aged-paper px-2 py-1 rounded">
-                  {entry.object.type}
-                </span>
-              )}
-            </p>
-          </div>
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="text-aged-ink hover:text-colonial-brown transition-colors"
-              aria-label="Close"
-            >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          )}
+        {/* Header */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-serif font-bold text-colonial-brown mb-2">
+            {entry.locationName || 'Unknown Location'}
+          </h2>
+          <p className="text-sm text-sepia">
+            {entry.object?.type && (
+              <span className="inline-block bg-aged-paper px-2 py-1 rounded">
+                {entry.object.type}
+              </span>
+            )}
+          </p>
         </div>
 
         {/* Object Image */}
@@ -83,7 +58,6 @@ export default function EntryDetail({
           <h3 className="text-lg font-serif font-semibold text-colonial-brown mb-2">
             Location
           </h3>
-          <p className="text-ink-black">{entry.locationName}</p>
           <p className="text-sm text-aged-ink">
             {entry.location.latitude.toFixed(4)}°N,{' '}
             {entry.location.longitude.toFixed(4)}°W
