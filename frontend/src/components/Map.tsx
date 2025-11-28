@@ -14,6 +14,7 @@ L.Icon.Default.mergeOptions({
 
 interface MapProps {
   entries: Entry[];
+  selectedObjectId?: string;
   onEntryClick?: (entry: Entry) => void;
   center?: [number, number];
   zoom?: number;
@@ -41,6 +42,7 @@ function MapBounds({ entries }: { entries: Entry[] }) {
 
 export default function Map({
   entries,
+  selectedObjectId,
   onEntryClick,
   center = [20, -80], // Default to Caribbean/Central America region
   zoom = 5,
@@ -64,29 +66,37 @@ export default function Map({
         maxZoom={19}
       />
 
-      {entries.map((entry) => (
-        <Marker
-          key={entry.id}
-          position={[entry.location.latitude, entry.location.longitude]}
-          eventHandlers={{
-            click: () => onEntryClick?.(entry),
-          }}
-        >
-          <Popup>
-            <div className="min-w-[200px]">
-              <h3 className="font-bold text-colonial-brown">
-                {entry.object?.name || 'Unknown'}
-              </h3>
-              <p className="text-sm text-aged-ink">{entry.locationName}</p>
-              <p className="text-xs text-sepia mt-1">
-                {new Date(entry.startDate).toLocaleDateString()}
-                {entry.endDate && ` - ${new Date(entry.endDate).toLocaleDateString()}`}
-              </p>
-              <p className="text-sm mt-2">{entry.description}</p>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
+      {entries.map((entry) => {
+        const isSelectedObject =
+          selectedObjectId && entry.objectId === selectedObjectId;
+
+        return (
+          <Marker
+            key={entry.id}
+            position={[entry.location.latitude, entry.location.longitude]}
+            eventHandlers={{
+              click: () => onEntryClick?.(entry),
+            }}
+            opacity={isSelectedObject ? 1 : 0.4}
+            zIndexOffset={isSelectedObject ? 1000 : 0}
+          >
+            <Popup>
+              <div className="min-w-[200px]">
+                <h3 className="font-bold text-colonial-brown">
+                  {entry.object?.name || 'Unknown'}
+                </h3>
+                <p className="text-sm text-aged-ink">{entry.locationName}</p>
+                <p className="text-xs text-sepia mt-1">
+                  {new Date(entry.startDate).toLocaleDateString()}
+                  {entry.endDate &&
+                    ` - ${new Date(entry.endDate).toLocaleDateString()}`}
+                </p>
+                <p className="text-sm mt-2">{entry.description}</p>
+              </div>
+            </Popup>
+          </Marker>
+        );
+      })}
 
       {entries.length > 0 && <MapBounds entries={entries} />}
     </MapContainer>

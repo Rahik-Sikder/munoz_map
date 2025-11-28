@@ -2,25 +2,57 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import Map from '../components/Map';
 import Timeline from '../components/Timeline';
 import EntryDetail from '../components/EntryDetail';
-import ObjectFilter from '../components/ObjectFilter';
+import FloatingWindow from '../components/FloatingWindow';
+import WindowBar from '../components/WindowBar';
+import ObjectBrowser from '../components/ObjectBrowser';
 import { api } from '../api/client';
-import type { Entry, EntryFilters } from '../types';
+import type { Entry, HistoricalObject } from '../types';
 
 export default function MapView() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
-  const [filters, setFilters] = useState<EntryFilters>({});
 
-  // Fetch entries from API
+  // Object state
+  const [objects, setObjects] = useState<HistoricalObject[]>([]);
+  const [selectedObject, setSelectedObject] = useState<HistoricalObject | null>(null);
+  const [showObjectBrowser, setShowObjectBrowser] = useState(true);
+
+  // Window minimization state
+  const [minimizedWindows, setMinimizedWindows] = useState<Set<string>>(new Set());
+
+  // Fetch all objects on mount
+  useEffect(() => {
+    const fetchObjects = async () => {
+      try {
+        const data = await api.objects.getAll();
+        setObjects(data);
+      } catch (err) {
+        console.error('Failed to fetch objects:', err);
+        // Don't show error UI, just log - objects are optional feature
+      }
+    };
+
+    fetchObjects();
+  }, []);
+
+  // Fetch entries - all entries or filtered by selected object
   useEffect(() => {
     const fetchEntries = async () => {
       try {
         setLoading(true);
         setError(null);
-        const data = await api.entries.getAll(filters);
-        setEntries(data);
+
+        if (selectedObject) {
+          // Fetch entries for selected object
+          const data = await api.entries.getByObjectId(selectedObject.id);
+          setEntries(data);
+        } else {
+          // Fetch all entries when no object selected
+          const data = await api.entries.getAll();
+          setEntries(data);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch entries');
       } finally {
@@ -29,42 +61,130 @@ export default function MapView() {
     };
 
     fetchEntries();
-  }, [filters]);
+  }, [selectedObject]);
+
+  // Create object lookup map for O(1) access
+  const objectsMap = useMemo(() => {
+    const lookupMap = new globalThis.Map<string, HistoricalObject>();
+    objects.forEach((obj) => lookupMap.set(obj.id, obj));
+    return lookupMap;
+  }, [objects]);
+
+  // Populate entry.object field for entries that don't have it
+  const entriesWithObjects = useMemo(() => {
+    return entries.map((entry) => ({
+      ...entry,
+      object: entry.object || objectsMap.get(entry.objectId),
+    }));
+  }, [entries, objectsMap]);
 
   // Extract unique tags from all entries
   const availableTags = useMemo(() => {
     const tagSet = new Set<string>();
-    entries.forEach((entry) => {
+    entriesWithObjects.forEach((entry) => {
       entry.tags.forEach((tag) => tagSet.add(tag));
     });
     return Array.from(tagSet).sort();
-  }, [entries]);
+  }, [entriesWithObjects]);
 
-  // Filter entries based on client-side filters
-  const filteredEntries = useMemo(() => {
-    let filtered = entries;
-
-    // Client-side search filter
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      filtered = filtered.filter(
-        (entry) =>
-          entry.object?.name.toLowerCase().includes(searchLower) ||
-          entry.locationName.toLowerCase().includes(searchLower) ||
-          entry.description.toLowerCase().includes(searchLower)
-      );
-    }
-
-    return filtered;
-  }, [entries, filters]);
-
+  // Entry selection
   const handleEntryClick = useCallback((entry: Entry) => {
     setSelectedEntry(entry);
   }, []);
 
-  const handleFilterChange = useCallback((newFilters: EntryFilters) => {
-    setFilters(newFilters);
+  // Object selection
+  const handleObjectSelect = useCallback((object: HistoricalObject) => {
+    setSelectedObject(object);
+    setSelectedEntry(null); // Clear entry selection when object changes
   }, []);
+
+  const handleClearObjectSelection = useCallback(() => {
+    setSelectedObject(null);
+  }, []);
+
+  const handleViewObjectTimeline = useCallback((object: HistoricalObject) => {
+    setSelectedObject(object);
+    // Keep selectedEntry as-is (don't clear)
+  }, []);
+
+  const handleToggleObjectBrowser = useCallback(() => {
+    setShowObjectBrowser((prev) => !prev);
+  }, []);
+
+  // Window management
+  const handleMinimizeWindow = useCallback((windowId: string) => {
+    setMinimizedWindows((prev) => new Set(prev).add(windowId));
+  }, []);
+
+  const handleRestoreWindow = useCallback((windowId: string) => {
+    setMinimizedWindows((prev) => {
+      const next = new Set(prev);
+      next.delete(windowId);
+      return next;
+    });
+  }, []);
+
+  const handleCloseWindow = useCallback((windowId: string) => {
+    // Handle window-specific close logic
+    switch (windowId) {
+      case 'objectBrowser':
+        setShowObjectBrowser(false);
+        break;
+      case 'timeline':
+        setSelectedObject(null); // Closing timeline clears object selection
+        break;
+      case 'entryDetail':
+        setSelectedEntry(null);
+        break;
+    }
+    // Also remove from minimized set if it was minimized
+    setMinimizedWindows((prev) => {
+      const next = new Set(prev);
+      next.delete(windowId);
+      return next;
+    });
+  }, []);
+
+  // Helper to check if window is minimized
+  const isWindowMinimized = useCallback(
+    (windowId: string) => minimizedWindows.has(windowId),
+    [minimizedWindows]
+  );
+
+  // Compute minimized windows array for WindowBar
+  const minimizedWindowsList = useMemo(() => {
+    const windows: Array<{
+      id: string;
+      title: string;
+      icon?: React.ReactNode;
+    }> = [];
+
+    if (isWindowMinimized('objectBrowser') && showObjectBrowser) {
+      windows.push({
+        id: 'objectBrowser',
+        title: 'Historical Objects',
+        icon: <span className="text-lg">🗺️</span>,
+      });
+    }
+
+    if (isWindowMinimized('timeline') && selectedObject) {
+      windows.push({
+        id: 'timeline',
+        title: `Timeline: ${selectedObject.name}`,
+        icon: <span className="text-lg">📅</span>,
+      });
+    }
+
+    if (isWindowMinimized('entryDetail') && selectedEntry) {
+      windows.push({
+        id: 'entryDetail',
+        title: selectedEntry.object?.name || 'Entry Detail',
+        icon: <span className="text-lg">📄</span>,
+      });
+    }
+
+    return windows;
+  }, [minimizedWindows, showObjectBrowser, selectedObject, selectedEntry, isWindowMinimized]);
 
   if (loading) {
     return (
@@ -106,6 +226,12 @@ export default function MapView() {
               Colonial Latin America Historical Map
             </h1>
             <div className="flex gap-2">
+              <button
+                onClick={handleToggleObjectBrowser}
+                className="px-4 py-2 bg-colonial-blue text-parchment rounded hover:bg-aged-green transition-colors text-sm font-semibold"
+              >
+                {showObjectBrowser ? 'Hide' : 'Show'} Object Browser
+              </button>
               <a
                 href="/admin"
                 className="px-4 py-2 bg-colonial-gold text-ink-black rounded hover:bg-aged-paper transition-colors text-sm font-semibold"
@@ -117,54 +243,97 @@ export default function MapView() {
         </div>
       </header>
 
-      {/* Filters Bar - Compact */}
-      <div className="bg-aged-paper border-b-2 border-map-border p-2 z-20">
-        <ObjectFilter
-          onFilterChange={handleFilterChange}
-          availableTags={availableTags}
-        />
-      </div>
-
       {/* Main Content Area - Map with Floating Panels */}
       <div className="flex-1 relative">
         {/* Full-screen Map */}
-        <div className="absolute inset-0 z-0 w-full h-full">
+        <div className="absolute inset-0 z-0">
           <Map
-            entries={filteredEntries}
+            entries={entriesWithObjects}
+            selectedObjectId={selectedObject?.id}
             onEntryClick={handleEntryClick}
           />
         </div>
 
-        {/* Floating Timeline - Right Side - Compact */}
-        <div className="absolute top-6 right-6 w-72 max-h-96 bg-white border-2 border-map-border rounded-2xl shadow-2xl z-10 flex flex-col overflow-hidden">
-          {/* Timeline Header */}
-          <div className="px-4 py-3 bg-colonial-brown text-parchment border-b-2 border-map-border flex items-center justify-between">
-            <h3 className="font-serif font-bold text-sm">Timeline</h3>
-            <span className="text-xs">
-              {filteredEntries.length} {filteredEntries.length === 1 ? 'entry' : 'entries'}
-            </span>
-          </div>
+        {/* ObjectBrowser (replaces filters bar) */}
+        {showObjectBrowser && !isWindowMinimized('objectBrowser') && (
+          <FloatingWindow
+            id="objectBrowser"
+            position="top-left"
+            width="w-96"
+            maxHeight="max-h-[calc(100vh-10rem)]"
+            title="Historical Objects"
+            onClose={() => handleCloseWindow('objectBrowser')}
+            onMinimize={() => handleMinimizeWindow('objectBrowser')}
+            showCloseButton={true}
+            showMinimizeButton={true}
+            icon={<span className="text-lg">🗺️</span>}
+            zIndex={10}
+          >
+            <ObjectBrowser
+              objects={objects}
+              selectedObjectId={selectedObject?.id}
+              onObjectSelect={handleObjectSelect}
+              availableTags={availableTags}
+            />
+          </FloatingWindow>
+        )}
 
-          {/* Timeline Content - Scrollable */}
-          <div className="flex-1 overflow-y-auto">
+        {/* Timeline (only when object selected) */}
+        {selectedObject && !isWindowMinimized('timeline') && (
+          <FloatingWindow
+            id="timeline"
+            position="top-right"
+            width="w-80"
+            maxHeight="max-h-[calc(100vh-10rem)]"
+            title={`Timeline: ${selectedObject.name}`}
+            onClose={() => handleCloseWindow('timeline')}
+            onMinimize={() => handleMinimizeWindow('timeline')}
+            showCloseButton={true}
+            showMinimizeButton={true}
+            icon={<span className="text-lg">📅</span>}
+            zIndex={10}
+          >
             <Timeline
-              entries={filteredEntries}
+              entries={entriesWithObjects}
+              selectedObject={selectedObject}
               onEntryClick={handleEntryClick}
               selectedEntryId={selectedEntry?.id}
+              onClearObjectSelection={handleClearObjectSelection}
             />
-          </div>
-        </div>
+          </FloatingWindow>
+        )}
 
-        {/* Floating Detail Panel - Left Side (appears when entry selected) - Smaller */}
-        {selectedEntry && (
-          <div className="absolute top-6 left-6 w-80 max-h-[calc(100%-3rem)] bg-parchment border-2 border-colonial-gold rounded-2xl shadow-2xl z-20 overflow-hidden">
+        {/* EntryDetail (when entry selected) */}
+        {selectedEntry && !isWindowMinimized('entryDetail') && (
+          <FloatingWindow
+            id="entryDetail"
+            position="bottom-left"
+            width="w-96"
+            maxHeight="max-h-[calc(100vh-10rem)]"
+            title={selectedEntry.object?.name || 'Entry Detail'}
+            onClose={() => handleCloseWindow('entryDetail')}
+            onMinimize={() => handleMinimizeWindow('entryDetail')}
+            showCloseButton={true}
+            showMinimizeButton={true}
+            icon={<span className="text-lg">📄</span>}
+            zIndex={20}
+          >
             <EntryDetail
               entry={selectedEntry}
               onClose={() => setSelectedEntry(null)}
+              onViewObjectTimeline={handleViewObjectTimeline}
             />
-          </div>
+          </FloatingWindow>
         )}
       </div>
+
+      {/* WindowBar at bottom - only visible when windows are minimized */}
+      {minimizedWindowsList.length > 0 && (
+        <WindowBar
+          minimizedWindows={minimizedWindowsList}
+          onRestore={handleRestoreWindow}
+        />
+      )}
     </div>
   );
 }

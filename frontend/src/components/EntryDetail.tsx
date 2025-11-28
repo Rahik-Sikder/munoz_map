@@ -1,11 +1,16 @@
-import type { Entry } from '../types';
+import type { Entry, HistoricalObject } from '../types';
 
 interface EntryDetailProps {
   entry: Entry | null;
   onClose?: () => void;
+  onViewObjectTimeline?: (object: HistoricalObject) => void;
 }
 
-export default function EntryDetail({ entry, onClose }: EntryDetailProps) {
+export default function EntryDetail({
+  entry,
+  onClose,
+  onViewObjectTimeline,
+}: EntryDetailProps) {
   if (!entry) {
     return (
       <div className="flex items-center justify-center h-full text-aged-ink">
@@ -113,6 +118,14 @@ export default function EntryDetail({ entry, onClose }: EntryDetailProps) {
             <p className="text-ink-black leading-relaxed">
               {entry.object.description}
             </p>
+            {onViewObjectTimeline && (
+              <button
+                onClick={() => onViewObjectTimeline(entry.object!)}
+                className="mt-3 px-4 py-2 bg-colonial-blue text-parchment rounded hover:bg-colonial-brown transition-colors text-sm font-semibold"
+              >
+                View All Entries for {entry.object.name}
+              </button>
+            )}
           </div>
         )}
 
