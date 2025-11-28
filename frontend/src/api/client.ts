@@ -9,6 +9,7 @@ import type {
   ApiResponse,
   ApiError,
 } from '../types';
+import { authUtils } from './auth';
 
 // Get API base URL from environment variable
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
@@ -32,14 +33,32 @@ async function apiFetch<T>(
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
 
+  // Get admin key from session storage
+  const adminKey = authUtils.getAdminKey();
+
+  // Build headers
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...options?.headers,
+  };
+
+  // Add X-Admin-Key header for write operations (POST, PUT, DELETE)
+  const method = options?.method || 'GET';
+  if (adminKey && ['POST', 'PUT', 'DELETE'].includes(method)) {
+    headers['X-Admin-Key'] = adminKey;
+  }
+
   try {
     const response = await fetch(url, {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
+      headers,
     });
+
+    // Handle 401 Unauthorized - clear session and throw error
+    if (response.status === 401) {
+      authUtils.logout();
+      throw new ApiClientError('Authentication required', 401);
+    }
 
     if (!response.ok) {
       const errorData: ApiError = await response.json().catch(() => ({

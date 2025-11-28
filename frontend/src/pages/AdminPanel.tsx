@@ -1,19 +1,42 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api/client';
-import type { HistoricalObject, Entry } from '../types';
+import { authUtils } from '../api/auth';
+import type { HistoricalObject, Entry, CreateObjectRequest, CreateEntryRequest, UpdateObjectRequest, UpdateEntryRequest } from '../types';
+import PasswordModal from '../components/PasswordModal';
+import ObjectFormModal from '../components/ObjectFormModal';
+import EntryFormModal from '../components/EntryFormModal';
 
 type TabType = 'objects' | 'entries';
 
 export default function AdminPanel() {
+  // Authentication state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Data state
   const [activeTab, setActiveTab] = useState<TabType>('objects');
   const [objects, setObjects] = useState<HistoricalObject[]>([]);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Fetch data
+  // Modal state
+  const [showObjectModal, setShowObjectModal] = useState(false);
+  const [showEntryModal, setShowEntryModal] = useState(false);
+  const [editingObject, setEditingObject] = useState<HistoricalObject | null>(null);
+  const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
+
+  // Filter state
+  const [entryFilter, setEntryFilter] = useState('');
+
+  // Check authentication on mount
   useEffect(() => {
-    fetchData();
+    if (authUtils.isAuthenticated()) {
+      setIsAuthenticated(true);
+      fetchData();
+    } else {
+      setIsAuthenticated(false);
+      setLoading(false);
+    }
   }, []);
 
   const fetchData = async () => {
@@ -61,6 +84,89 @@ export default function AdminPanel() {
     }
   };
 
+  // Object CRUD handlers
+  const handleCreateObject = async (data: CreateObjectRequest) => {
+    const newObject = await api.objects.create(data);
+    setObjects([...objects, newObject]);
+    showMessage('success', 'Object created successfully');
+  };
+
+  const handleUpdateObject = async (data: CreateObjectRequest) => {
+    if (!editingObject) return;
+    const updatedObject = await api.objects.update(editingObject.id, data as UpdateObjectRequest);
+    setObjects(objects.map(obj => obj.id === editingObject.id ? updatedObject : obj));
+    showMessage('success', 'Object updated successfully');
+  };
+
+  const handleObjectSubmit = async (data: CreateObjectRequest) => {
+    if (editingObject) {
+      await handleUpdateObject(data);
+    } else {
+      await handleCreateObject(data);
+    }
+  };
+
+  const handleOpenObjectModal = (object?: HistoricalObject) => {
+    setEditingObject(object || null);
+    setShowObjectModal(true);
+  };
+
+  const handleCloseObjectModal = () => {
+    setShowObjectModal(false);
+    setEditingObject(null);
+  };
+
+  // Entry CRUD handlers
+  const handleCreateEntry = async (data: CreateEntryRequest) => {
+    const newEntry = await api.entries.create(data);
+    setEntries([...entries, newEntry]);
+    showMessage('success', 'Entry created successfully');
+  };
+
+  const handleUpdateEntry = async (data: CreateEntryRequest) => {
+    if (!editingEntry) return;
+    const updatedEntry = await api.entries.update(editingEntry.id, data as UpdateEntryRequest);
+    setEntries(entries.map(entry => entry.id === editingEntry.id ? updatedEntry : entry));
+    showMessage('success', 'Entry updated successfully');
+  };
+
+  const handleEntrySubmit = async (data: CreateEntryRequest) => {
+    if (editingEntry) {
+      await handleUpdateEntry(data);
+    } else {
+      await handleCreateEntry(data);
+    }
+  };
+
+  const handleOpenEntryModal = (entry?: Entry) => {
+    setEditingEntry(entry || null);
+    setShowEntryModal(true);
+  };
+
+  const handleCloseEntryModal = () => {
+    setShowEntryModal(false);
+    setEditingEntry(null);
+  };
+
+  // Handle successful authentication
+  const handleAuthenticated = () => {
+    setIsAuthenticated(true);
+    fetchData();
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    authUtils.logout();
+    setIsAuthenticated(false);
+    setObjects([]);
+    setEntries([]);
+  };
+
+  // Show password modal if not authenticated
+  if (!isAuthenticated) {
+    return <PasswordModal onAuthenticated={handleAuthenticated} />;
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-parchment">
@@ -79,12 +185,20 @@ export default function AdminPanel() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-serif font-bold">Admin Panel</h1>
-            <a
-              href="/"
-              className="px-4 py-2 bg-colonial-gold text-ink-black rounded hover:bg-aged-paper transition-colors text-sm font-semibold"
-            >
-              Back to Map
-            </a>
+            <div className="flex gap-3">
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-colonial-red text-parchment rounded hover:bg-sepia transition-colors text-sm font-semibold"
+              >
+                Logout
+              </button>
+              <a
+                href="/"
+                className="px-4 py-2 bg-colonial-gold text-ink-black rounded hover:bg-aged-paper transition-colors text-sm font-semibold"
+              >
+                Back to Map
+              </a>
+            </div>
           </div>
         </div>
       </header>
@@ -135,12 +249,15 @@ export default function AdminPanel() {
               <h2 className="text-xl font-serif font-bold text-colonial-brown">
                 Historical Objects
               </h2>
-              <button className="px-4 py-2 bg-colonial-blue text-parchment rounded hover:bg-colonial-brown transition-colors">
+              <button
+                onClick={() => handleOpenObjectModal()}
+                className="px-4 py-2 bg-colonial-blue text-parchment rounded hover:bg-colonial-brown transition-colors"
+              >
                 Add New Object
               </button>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
               {objects.map((object) => (
                 <div
                   key={object.id}
@@ -163,7 +280,10 @@ export default function AdminPanel() {
                     {object.description}
                   </p>
                   <div className="flex gap-2">
-                    <button className="flex-1 px-3 py-1 bg-colonial-gold text-ink-black rounded hover:bg-aged-paper transition-colors text-sm">
+                    <button
+                      onClick={() => handleOpenObjectModal(object)}
+                      className="flex-1 px-3 py-1 bg-colonial-gold text-ink-black rounded hover:bg-aged-paper transition-colors text-sm"
+                    >
                       Edit
                     </button>
                     <button
@@ -192,13 +312,43 @@ export default function AdminPanel() {
               <h2 className="text-xl font-serif font-bold text-colonial-brown">
                 Historical Entries
               </h2>
-              <button className="px-4 py-2 bg-colonial-blue text-parchment rounded hover:bg-colonial-brown transition-colors">
-                Add New Entry
-              </button>
+              <div className="flex gap-3 items-center">
+                <input
+                  type="text"
+                  placeholder="Filter by Object Name or Location Name..."
+                  value={entryFilter}
+                  onChange={(e) => setEntryFilter(e.target.value)}
+                  className="px-4 py-2 border-2 border-map-border rounded bg-aged-paper text-ink-black placeholder-aged-ink focus:outline-none focus:border-colonial-blue"
+                />
+                <button
+                  onClick={() => handleOpenEntryModal()}
+                  className="px-4 py-2 bg-colonial-blue text-parchment rounded hover:bg-colonial-brown transition-colors"
+                >
+                  Add New Entry
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-4">
-              {entries.map((entry) => (
+            <div className="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
+              {entries
+                .filter((entry) => {
+                  if (!entryFilter) return true;
+                  const filterLower = entryFilter.toLowerCase();
+
+                  // Check if location name matches
+                  if (entry.locationName?.toLowerCase().includes(filterLower)) {
+                    return true;
+                  }
+
+                  // Check if the corresponding object's name matches
+                  const correspondingObject = objects.find(obj => obj.id === entry.objectId);
+                  if (correspondingObject?.name.toLowerCase().includes(filterLower)) {
+                    return true;
+                  }
+
+                  return false;
+                })
+                .map((entry) => (
                 <div
                   key={entry.id}
                   className="bg-aged-paper border-2 border-map-border rounded-lg p-4 hover:shadow-lg transition-shadow"
@@ -206,10 +356,10 @@ export default function AdminPanel() {
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <h3 className="font-serif font-bold text-colonial-brown mb-1">
-                        {entry.object?.name || 'Unknown Object'}
+                        {entry.locationName || 'Unknown Location'}
                       </h3>
                       <p className="text-sm text-aged-ink mb-2">
-                        {entry.locationName} ({entry.location.latitude.toFixed(4)}°,{' '}
+                        {entry.objectId || 'Unknown Object'} ({entry.location.latitude.toFixed(4)}°,{' '}
                         {entry.location.longitude.toFixed(4)}°)
                       </p>
                       <p className="text-xs text-sepia mb-2">
@@ -234,7 +384,10 @@ export default function AdminPanel() {
                       )}
                     </div>
                     <div className="flex gap-2 ml-4">
-                      <button className="px-3 py-1 bg-colonial-gold text-ink-black rounded hover:bg-aged-paper transition-colors text-sm">
+                      <button
+                        onClick={() => handleOpenEntryModal(entry)}
+                        className="px-3 py-1 bg-colonial-gold text-ink-black rounded hover:bg-aged-paper transition-colors text-sm"
+                      >
                         Edit
                       </button>
                       <button
@@ -257,6 +410,22 @@ export default function AdminPanel() {
           </div>
         )}
       </div>
+
+      {/* Modals */}
+      <ObjectFormModal
+        isOpen={showObjectModal}
+        onClose={handleCloseObjectModal}
+        onSubmit={handleObjectSubmit}
+        editingObject={editingObject}
+      />
+
+      <EntryFormModal
+        isOpen={showEntryModal}
+        onClose={handleCloseEntryModal}
+        onSubmit={handleEntrySubmit}
+        editingEntry={editingEntry}
+        availableObjects={objects}
+      />
     </div>
   );
 }

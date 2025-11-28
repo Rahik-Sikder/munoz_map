@@ -19,9 +19,11 @@
       "name": "Hernán Cortés",
       "type": "person",
       "description": "Spanish Conquistador who led an expedition that caused the fall of the Aztec Empire and brought large portions of what is now mainland Mexico under the rule of the King of Castile",
-      "entryIds": [],
+      "entryIds": [
+        "471a3d8d-1ec5-4221-87b2-9bf8fc7a0690"
+      ],
       "createdAt": "2025-11-27T00:00:00Z",
-      "updatedAt": "2025-11-27T00:00:00Z"
+      "updatedAt": "2025-11-28T16:17:19Z"
     },
     {
       "id": "8d3e3f27-8b36-4cce-a552-57556300b0e9",
@@ -40,11 +42,11 @@
       "id": "entry-palos-1492",
       "objectId": "columbus-1492",
       "location": {
-        "latitude": 37.2315,
-        "longitude": -6.8899
+        "latitude": 37.1288,
+        "longitude": -6.6577
       },
       "locationName": "Departure from Palos de la Frontera",
-      "startDate": "1492-08-03",
+      "startDate": "1492-08-03T00:00:00.000Z",
       "description": "Columbus departed from the port of Palos de la Frontera, Spain, with three ships: the Niña, the Pinta, and the Santa María. This marked the beginning of his first voyage to the New World.",
       "sources": [
         "Historia de las Indias by Bartolomé de las Casas"
@@ -56,7 +58,7 @@
         "first-voyage"
       ],
       "createdAt": "2025-11-27T00:00:00Z",
-      "updatedAt": "2025-11-27T00:00:00Z"
+      "updatedAt": "2025-11-28T16:11:25Z"
     },
     {
       "id": "entry-canary-1492",
@@ -147,6 +149,21 @@
       ],
       "createdAt": "2025-11-27T17:04:14Z",
       "updatedAt": "2025-11-27T17:04:14Z"
+    },
+    {
+      "id": "471a3d8d-1ec5-4221-87b2-9bf8fc7a0690",
+      "objectId": "0f6e85ff-3269-4eb9-bd90-d910970e5fd6",
+      "location": {
+        "latitude": 19.6054,
+        "longitude": -99.3604
+      },
+      "locationName": "Tenochtitlan",
+      "startDate": "2025-08-13T00:00:00.000Z",
+      "description": "Siege of Tenochtitlan with the Txcala",
+      "sources": [],
+      "tags": [],
+      "createdAt": "2025-11-28T16:17:19Z",
+      "updatedAt": "2025-11-28T16:17:19Z"
     }
   ]
 }
