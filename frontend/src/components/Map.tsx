@@ -49,13 +49,30 @@ function MapBounds({ entries }: { entries: Entry[] }) {
 
   useEffect(() => {
     if (entries.length > 0) {
+      console.log('MapBounds: Fitting to', entries.length, 'entries');
+      console.log('MapBounds: Entry locations:', entries.map(e => ({
+        id: e.id,
+        lat: e.location.latitude,
+        lng: e.location.longitude,
+        name: e.locationName
+      })));
+
       const bounds = L.latLngBounds(
         entries.map((entry) => [
           entry.location.latitude,
           entry.location.longitude,
         ])
       );
-      map.fitBounds(bounds, { padding: [50, 50] });
+
+      console.log('MapBounds: Calculated bounds:', bounds);
+
+      // Add smooth animation like MapController
+      map.fitBounds(bounds, {
+        padding: [50, 50],
+        animate: true,
+        duration: 2.5,        // Slightly longer /for smoother feel
+        easeLinearity: 0.2    // Lower = smoother easing (0-1 range)
+      });
     }
   }, [entries, map]);
 
@@ -151,9 +168,9 @@ export default function Map({
                 </h3>
                 <p className="text-sm text-aged-ink">{entry.locationName}</p>
                 <p className="text-xs text-sepia mt-1">
-                  {new Date(entry.startDate).toLocaleDateString()}
+                  {entry.startDate.split('T')[0]}
                   {entry.endDate &&
-                    ` - ${new Date(entry.endDate).toLocaleDateString()}`}
+                    ` - ${entry.endDate.split('T')[0]}`}
                 </p>
                 <p className="text-sm mt-2">{entry.description}</p>
               </div>

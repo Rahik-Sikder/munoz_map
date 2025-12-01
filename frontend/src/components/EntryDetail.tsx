@@ -18,11 +18,12 @@ export default function EntryDetail({
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+    // Extract date without timezone conversion (YYYY-MM-DD)
+    const datePart = dateString.split('T')[0];
+    const [year, month, day] = datePart.split('-');
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                        'July', 'August', 'September', 'October', 'November', 'December'];
+    return `${monthNames[parseInt(month) - 1]} ${parseInt(day)}, ${year}`;
   };
 
   return (
@@ -43,7 +44,7 @@ export default function EntryDetail({
         </div>
 
         {/* Object Image */}
-        {entry.object?.imageUrl && (
+        {/* {entry.object?.imageUrl && (
           <div className="mb-6">
             <img
               src={entry.object.imageUrl}
@@ -51,7 +52,7 @@ export default function EntryDetail({
               className="w-full rounded-lg shadow-lg border-4 border-map-border"
             />
           </div>
-        )}
+        )} */}
 
         {/* Location Information */}
         <div className="mb-6">
@@ -124,16 +125,33 @@ export default function EntryDetail({
 
         {/* Sources */}
         {entry.sources.length > 0 && (
-          <div className="mb-6">
-            <h3 className="text-lg font-serif font-semibold text-colonial-brown mb-2">
+          <div className="mb-6 border-t border-aged-paper pt-4">
+            <h3 className="text-lg font-serif font-semibold text-colonial-brown mb-3">
               Sources
             </h3>
-            <ul className="list-disc list-inside space-y-1">
-              {entry.sources.map((source, index) => (
-                <li key={index} className="text-ink-black text-sm">
-                  {source}
-                </li>
-              ))}
+            <ul className="space-y-2">
+              {entry.sources.map((source, index) => {
+                // Check if source contains a URL
+                const urlMatch = source.match(/(https?:\/\/[^\s]+)/g);
+                const isUrl = urlMatch && urlMatch.length > 0;
+
+                return (
+                  <li key={index} className="text-ink-black text-sm leading-relaxed pl-4 border-l-2 border-colonial-blue">
+                    {isUrl ? (
+                      <a
+                        href={urlMatch[0]}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-colonial-blue hover:text-colonial-brown underline transition-colors"
+                      >
+                        {source}
+                      </a>
+                    ) : (
+                      source
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}

@@ -23,10 +23,12 @@ export default function Timeline({
   }, [entries]);
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-    });
+    // Extract date without timezone conversion (YYYY-MM-DD)
+    const datePart = dateString.split('T')[0];
+    const [year, month] = datePart.split('-');
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${monthNames[parseInt(month) - 1]} ${year}`;
   };
 
   return (
@@ -62,11 +64,7 @@ export default function Timeline({
                 return (
                   <div
                     key={entry.id}
-                    className={`relative pl-8 cursor-pointer transition-all ${
-                      isSelected
-                        ? 'transform scale-105'
-                        : 'hover:transform hover:scale-102'
-                    }`}
+                    className="relative pl-8 cursor-pointer"
                     onClick={() => onEntryClick?.(entry)}
                   >
                     {/* Timeline dot */}
@@ -80,10 +78,10 @@ export default function Timeline({
 
                     {/* Entry card - Compact */}
                     <div
-                      className={`bg-parchment rounded p-2 shadow border transition-colors ${
+                      className={`bg-parchment rounded p-2 shadow border transition-all ${
                         isSelected
-                          ? 'border-colonial-gold'
-                          : 'border-map-border hover:border-colonial-brown'
+                          ? 'border-colonial-gold transform scale-105'
+                          : 'border-map-border hover:border-colonial-brown hover:transform hover:scale-102'
                       }`}
                     >
                       {/* Date - Compact */}

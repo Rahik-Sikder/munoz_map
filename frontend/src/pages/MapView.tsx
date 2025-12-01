@@ -20,11 +20,8 @@ export default function MapView() {
   const [showObjectBrowser, setShowObjectBrowser] = useState(true);
   const [showTimeline, setShowTimeline] = useState(false);
 
-  // Entry windows state (track which entries have open windows)
-  const [openEntryWindows, setOpenEntryWindows] = useState<Set<string>>(new Set());
-
-  // Selected entry state (for marker and timeline selection)
-  const [selectedEntryId, setSelectedEntryId] = useState<string | undefined>(undefined);
+  // Selected entry state (for single entry window and marker/timeline selection)
+  const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
 
   // Map target state (for zooming to entry locations)
   const [mapTarget, setMapTarget] = useState<{lat: number, lng: number, zoom: number} | null>(null);
@@ -45,9 +42,9 @@ export default function MapView() {
   const [timelinePosition, setTimelinePosition] = useState<{ x: number; y: number } | null>(null);
   const [timelineSize, setTimelineSize] = useState<{ width: number; height: number } | null>(null);
 
-  // Entry Windows: temporary per-window (allows dragging while open, but resets when closed)
-  const [entryWindowsPositions, setEntryWindowsPositions] = useState<Map<string, { x: number; y: number }>>(new Map());
-  const [entryWindowsSizes, setEntryWindowsSizes] = useState<Map<string, { width: number; height: number }>>(new Map());
+  // Entry Window: temporary (allows dragging while open, but resets when closed)
+  const [entryWindowPosition, setEntryWindowPosition] = useState<{ x: number; y: number } | null>(null);
+  const [entryWindowSize, setEntryWindowSize] = useState<{ width: number; height: number } | null>(null);
 
   // Fetch all objects on mount
   useEffect(() => {
@@ -64,22 +61,16 @@ export default function MapView() {
     fetchObjects();
   }, []);
 
-  // Fetch entries - all entries or filtered by selected object
+  // Fetch all entries once on mount (no refetching when object selected)
   useEffect(() => {
     const fetchEntries = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        if (selectedObject) {
-          // Fetch entries for selected object
-          const data = await api.entries.getByObjectId(selectedObject.id);
-          setEntries(data);
-        } else {
-          // Fetch all entries when no object selected
-          const data = await api.entries.getAll();
-          setEntries(data);
-        }
+        // Always fetch all entries
+        const data = await api.entries.getAll();
+        setEntries(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch entries');
       } finally {
@@ -88,7 +79,7 @@ export default function MapView() {
     };
 
     fetchEntries();
-  }, [selectedObject]);
+  }, []); // Only run once on mount
 
   // Create object lookup map for O(1) access
   const objectsMap = useMemo(() => {
@@ -105,6 +96,18 @@ export default function MapView() {
     }));
   }, [entries, objectsMap]);
 
+  // Filter entries by selected object (frontend filtering - no API call)
+  const filteredEntries = useMemo(() => {
+    if (selectedObject) {
+      console.log('Filtering entries for object:', selectedObject.id, selectedObject.name);
+      const filtered = entriesWithObjects.filter(entry => entry.objectId === selectedObject.id);
+      console.log('Filtered entries count:', filtered.length);
+      return filtered;
+    }
+    console.log('No object selected, showing all entries:', entriesWithObjects.length);
+    return entriesWithObjects;
+  }, [entriesWithObjects, selectedObject]);
+
   // Extract unique tags from all entries
   const availableTags = useMemo(() => {
     const tagSet = new Set<string>();
@@ -116,32 +119,19 @@ export default function MapView() {
 
   // Entry window management
   const handleEntryClick = useCallback((entry: Entry) => {
-    setSelectedEntryId(entry.id);
+    setSelectedEntry(entry);
     setMapTarget({
       lat: entry.location.latitude,
       lng: entry.location.longitude,
       zoom: 6  // Subtle zoom level
     });
-    setOpenEntryWindows((prev) => new Set(prev).add(entry.id));
   }, []);
 
-  const handleCloseEntryWindow = useCallback((entryId: string) => {
-    setOpenEntryWindows((prev) => {
-      const next = new Set(prev);
-      next.delete(entryId);
-      return next;
-    });
+  const handleCloseEntryWindow = useCallback(() => {
+    setSelectedEntry(null);
     // Clear position/size state to reset to defaults on next open
-    setEntryWindowsPositions((prev) => {
-      const next = new Map(prev);
-      next.delete(entryId);
-      return next;
-    });
-    setEntryWindowsSizes((prev) => {
-      const next = new Map(prev);
-      next.delete(entryId);
-      return next;
-    });
+    setEntryWindowPosition(null);
+    setEntryWindowSize(null);
     setMapTarget(null);
   }, []);
 
@@ -257,27 +247,20 @@ export default function MapView() {
     []
   );
 
-  // Entry window position/size handlers (temporary per-window)
+  // Entry window position/size handlers (temporary)
   const handleEntryWindowPositionChange = useCallback(
-    (entryId: string, position: { x: number; y: number }) => {
-      setEntryWindowsPositions((prev) => new Map(prev).set(entryId, position));
+    (position: { x: number; y: number }) => {
+      setEntryWindowPosition(position);
     },
     []
   );
 
   const handleEntryWindowSizeChange = useCallback(
-    (entryId: string, size: { width: number; height: number }) => {
-      setEntryWindowsSizes((prev) => new Map(prev).set(entryId, size));
+    (size: { width: number; height: number }) => {
+      setEntryWindowSize(size);
     },
     []
   );
-
-  // Get open entry windows data
-  const openEntryWindowsData = useMemo(() => {
-    return Array.from(openEntryWindows)
-      .map((entryId) => entriesWithObjects.find((e) => e.id === entryId))
-      .filter((entry) => entry !== undefined) as Entry[];
-  }, [openEntryWindows, entriesWithObjects]);
 
   // Compute minimized windows array for WindowBar
   const minimizedWindowsList = useMemo(() => {
@@ -351,7 +334,7 @@ export default function MapView() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-serif font-bold">
-              Colonial Latin America Historical Map
+              HIS 346K Colonial Latin America Historical Map
             </h1>
             <div className="flex gap-2">
               <button
@@ -376,9 +359,9 @@ export default function MapView() {
         {/* Full-screen Map */}
         <div className="absolute inset-0 z-0">
           <LeafletMap
-            entries={entriesWithObjects}
+            entries={filteredEntries}
             selectedObjectId={selectedObject?.id}
-            selectedEntryId={selectedEntryId}
+            selectedEntryId={selectedEntry?.id}
             mapTarget={mapTarget}
             onEntryClick={handleEntryClick}
           />
@@ -455,42 +438,38 @@ export default function MapView() {
             zIndex={10}
           >
             <Timeline
-              entries={entriesWithObjects.filter(e => e.objectId === selectedObject.id)}
+              entries={filteredEntries}
               selectedObject={selectedObject}
-              selectedEntryId={selectedEntryId}
+              selectedEntryId={selectedEntry?.id}
               onEntryClick={handleEntryClick}
             />
           </FloatingWindow>
         )}
 
-        {/* Entry Windows (multiple can be open) */}
-        {openEntryWindowsData.map((entry, index) => {
-          if (!entry) return null;
-          return (
-            <FloatingWindow
-              key={entry.id}
-              id={`entry-${entry.id}`}
-              position="bottom-left"
-              customPosition={entryWindowsPositions.get(entry.id)}
-              customSize={entryWindowsSizes.get(entry.id)}
-              onPositionChange={(pos) => handleEntryWindowPositionChange(entry.id, pos)}
-              onSizeChange={(size) => handleEntryWindowSizeChange(entry.id, size)}
-              width="500px"
-              height="400px"
-              title={entry.object?.name || 'Entry Detail'}
-              onClose={() => handleCloseEntryWindow(entry.id)}
-              showCloseButton={true}
-              showMinimizeButton={false}
-              zIndex={20 + index}
-              className={`translate-x-${index * 30}`}
-            >
-              <EntryDetail
-                entry={entry}
-                onViewObjectTimeline={handleViewObjectFromEntry}
-              />
-            </FloatingWindow>
-          );
-        })}
+        {/* Entry Window (single) */}
+        {selectedEntry && (
+          <FloatingWindow
+            key={selectedEntry.id}
+            id="entry-window"
+            position="bottom-left"
+            customPosition={entryWindowPosition || undefined}
+            customSize={entryWindowSize || undefined}
+            onPositionChange={handleEntryWindowPositionChange}
+            onSizeChange={handleEntryWindowSizeChange}
+            width="500px"
+            height="400px"
+            title={selectedEntry.object?.name || 'Entry Detail'}
+            onClose={handleCloseEntryWindow}
+            showCloseButton={true}
+            showMinimizeButton={false}
+            zIndex={20}
+          >
+            <EntryDetail
+              entry={selectedEntry}
+              onViewObjectTimeline={handleViewObjectFromEntry}
+            />
+          </FloatingWindow>
+        )}
       </div>
 
       {/* WindowBar at bottom - only visible when windows are minimized */}
