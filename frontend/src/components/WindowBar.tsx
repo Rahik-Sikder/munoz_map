@@ -20,7 +20,7 @@ export default function WindowBar({
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-colonial-brown/90 border-t-2 border-map-border z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-colonial-brown/70 border-t-2 border-map-border z-50">
       <div className="flex gap-2 px-4 py-2">
         {minimizedWindows.map((window) => (
           <button
