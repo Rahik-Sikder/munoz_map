@@ -23,10 +23,12 @@ export default function Timeline({
   }, [entries]);
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-    });
+    // Extract date without timezone conversion (YYYY-MM-DD)
+    const datePart = dateString.split('T')[0];
+    const [year, month] = datePart.split('-');
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${monthNames[parseInt(month) - 1]} ${year}`;
   };
 
   return (

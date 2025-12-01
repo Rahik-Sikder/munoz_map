@@ -363,9 +363,9 @@ export default function AdminPanel() {
                         {entry.location.longitude.toFixed(4)}°)
                       </p>
                       <p className="text-xs text-sepia mb-2">
-                        {new Date(entry.startDate).toLocaleDateString()}
+                        {entry.startDate.split('T')[0]}
                         {entry.endDate &&
-                          ` - ${new Date(entry.endDate).toLocaleDateString()}`}
+                          ` - ${entry.endDate.split('T')[0]}`}
                       </p>
                       <p className="text-sm text-ink-black line-clamp-2 mb-2">
                         {entry.description}

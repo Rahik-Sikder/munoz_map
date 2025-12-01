@@ -151,9 +151,9 @@ export default function Map({
                 </h3>
                 <p className="text-sm text-aged-ink">{entry.locationName}</p>
                 <p className="text-xs text-sepia mt-1">
-                  {new Date(entry.startDate).toLocaleDateString()}
+                  {entry.startDate.split('T')[0]}
                   {entry.endDate &&
-                    ` - ${new Date(entry.endDate).toLocaleDateString()}`}
+                    ` - ${entry.endDate.split('T')[0]}`}
                 </p>
                 <p className="text-sm mt-2">{entry.description}</p>
               </div>
