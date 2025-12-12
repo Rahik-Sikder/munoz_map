@@ -42,7 +42,7 @@
 
 /* Subtle vintage/papery filter for map tiles */
 .vintage-map-tiles {
-  filter: sepia(0.16) contrast(0.96) brightness(1.03) saturate(0.88);
+  filter: sepia(0.25) contrast(0.9) brightness(1.1) saturate(0.6) hue-rotate(-10deg);
 }
 
 :root {
