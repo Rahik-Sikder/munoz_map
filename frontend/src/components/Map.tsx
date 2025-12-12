@@ -1,15 +1,22 @@
-import { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
-import type { Entry } from '../types';
-import L from 'leaflet';
+import { useEffect } from "react";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  Polyline,
+  useMap,
+} from "react-leaflet";
+import type { Entry } from "../types";
+import L from "leaflet";
 
 // Custom marker icon factory
 const createCustomIcon = (isSelected: boolean, isSelectedObject: boolean) => {
   const size = isSelected ? 32 : 20;
-  const color = isSelectedObject ? '#D4AF37' : '#5C4033';
+  const color = isSelectedObject ? "#D4AF37" : "#5C4033";
 
   return L.divIcon({
-    className: 'custom-marker',
+    className: "custom-marker",
     html: `<div style="
       width: ${size}px;
       height: ${size}px;
@@ -24,19 +31,21 @@ const createCustomIcon = (isSelected: boolean, isSelectedObject: boolean) => {
   });
 };
 
-
 // Helper function to get chronological path from entries
 const getChronologicalPath = (entries: Entry[]): [number, number][] => {
   return entries
-    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
-    .map(entry => [entry.location.latitude, entry.location.longitude]);
+    .sort(
+      (a, b) =>
+        new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+    )
+    .map((entry) => [entry.location.latitude, entry.location.longitude]);
 };
 
 interface MapProps {
   entries: Entry[];
   selectedObjectId?: string;
   selectedEntryId?: string | null;
-  mapTarget?: {lat: number, lng: number, zoom: number} | null;
+  mapTarget?: { lat: number; lng: number; zoom: number } | null;
   onEntryClick?: (entry: Entry) => void;
   center?: [number, number];
   zoom?: number;
@@ -49,13 +58,16 @@ function MapBounds({ entries }: { entries: Entry[] }) {
 
   useEffect(() => {
     if (entries.length > 0) {
-      console.log('MapBounds: Fitting to', entries.length, 'entries');
-      console.log('MapBounds: Entry locations:', entries.map(e => ({
-        id: e.id,
-        lat: e.location.latitude,
-        lng: e.location.longitude,
-        name: e.locationName
-      })));
+      console.log("MapBounds: Fitting to", entries.length, "entries");
+      console.log(
+        "MapBounds: Entry locations:",
+        entries.map((e) => ({
+          id: e.id,
+          lat: e.location.latitude,
+          lng: e.location.longitude,
+          name: e.locationName,
+        }))
+      );
 
       const bounds = L.latLngBounds(
         entries.map((entry) => [
@@ -64,14 +76,14 @@ function MapBounds({ entries }: { entries: Entry[] }) {
         ])
       );
 
-      console.log('MapBounds: Calculated bounds:', bounds);
+      console.log("MapBounds: Calculated bounds:", bounds);
 
       // Add smooth animation like MapController
       map.fitBounds(bounds, {
         padding: [50, 50],
         animate: true,
-        duration: 2.5,        // Slightly longer /for smoother feel
-        easeLinearity: 0.2    // Lower = smoother easing (0-1 range)
+        duration: 2.5, // Slightly longer /for smoother feel
+        easeLinearity: 0.2, // Lower = smoother easing (0-1 range)
       });
     }
   }, [entries, map]);
@@ -80,14 +92,18 @@ function MapBounds({ entries }: { entries: Entry[] }) {
 }
 
 // Component to handle map zoom and centering when entry is selected
-function MapController({ target }: { target?: {lat: number, lng: number, zoom: number} | null }) {
+function MapController({
+  target,
+}: {
+  target?: { lat: number; lng: number; zoom: number } | null;
+}) {
   const map = useMap();
 
   useEffect(() => {
     if (target) {
       map.flyTo([target.lat, target.lng], target.zoom, {
         duration: 1.5,
-        easeLinearity: 0.25
+        easeLinearity: 0.25,
       });
     }
   }, [target, map]);
@@ -106,12 +122,11 @@ function PathLine({ entries }: { entries: Entry[] }) {
       <Polyline
         positions={path}
         pathOptions={{
-          color: '#5C4033',
+          color: "#5C4033",
           weight: 2,
-          opacity: 0.6
+          opacity: 0.6,
         }}
       />
-      
     </>
   );
 }
@@ -124,11 +139,11 @@ export default function Map({
   onEntryClick,
   center = [20, -80], // Default to Caribbean/Central America region
   zoom = 5,
-  className = '',
+  className = "",
 }: MapProps) {
   // Debug: Log entries to console
   useEffect(() => {
-    console.log('Map received entries:', entries.length, entries);
+    console.log("Map received entries:", entries.length, entries);
   }, [entries]);
 
   return (
@@ -139,8 +154,8 @@ export default function Map({
       scrollWheelZoom={true}
     >
       <TileLayer
-        attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.'
-        url="https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         maxZoom={18}
         className="vintage-map-tiles"
       />
@@ -164,13 +179,12 @@ export default function Map({
             <Popup>
               <div className="min-w-[200px]">
                 <h3 className="font-bold text-colonial-brown">
-                  {entry.object?.name || 'Unknown'}
+                  {entry.object?.name || "Unknown"}
                 </h3>
                 <p className="text-sm text-aged-ink">{entry.locationName}</p>
                 <p className="text-xs text-sepia mt-1">
-                  {entry.startDate.split('T')[0]}
-                  {entry.endDate &&
-                    ` - ${entry.endDate.split('T')[0]}`}
+                  {entry.startDate.split("T")[0]}
+                  {entry.endDate && ` - ${entry.endDate.split("T")[0]}`}
                 </p>
                 <p className="text-sm mt-2">{entry.description}</p>
               </div>
@@ -181,7 +195,9 @@ export default function Map({
 
       {/* Chronological path with arrows (only for selected object) */}
       {selectedObjectId && entries.length > 1 && (
-        <PathLine entries={entries.filter(e => e.objectId === selectedObjectId)} />
+        <PathLine
+          entries={entries.filter((e) => e.objectId === selectedObjectId)}
+        />
       )}
 
       {entries.length > 0 && <MapBounds entries={entries} />}

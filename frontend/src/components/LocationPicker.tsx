@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
-import L from 'leaflet';
+import { useState, useEffect } from "react";
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import L from "leaflet";
 
 interface LocationPickerProps {
   latitude: number | null;
@@ -11,7 +11,7 @@ interface LocationPickerProps {
 // Custom marker icon
 const createPickerIcon = () => {
   return L.divIcon({
-    className: 'custom-picker-marker',
+    className: "custom-picker-marker",
     html: `<div style="
       width: 32px;
       height: 32px;
@@ -29,12 +29,14 @@ const createPickerIcon = () => {
 // Component to handle map clicks
 function LocationMarker({
   position,
-  onPositionChange
+  onPositionChange,
 }: {
   position: [number, number] | null;
   onPositionChange: (lat: number, lng: number) => void;
 }) {
-  const [markerPosition, setMarkerPosition] = useState<[number, number] | null>(position);
+  const [markerPosition, setMarkerPosition] = useState<[number, number] | null>(
+    position
+  );
 
   useEffect(() => {
     setMarkerPosition(position);
@@ -86,17 +88,22 @@ export default function LocationPicker({
         key={`${center[0]}-${center[1]}-${zoom}`} // Force re-render when center changes
       >
         <TileLayer
-          attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>.'
-          url="https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           maxZoom={18}
         />
-        <LocationMarker position={position} onPositionChange={onLocationChange} />
+        <LocationMarker
+          position={position}
+          onPositionChange={onLocationChange}
+        />
       </MapContainer>
 
       {/* Instruction overlay */}
       {!position && (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-colonial-brown text-parchment px-4 py-2 rounded shadow-lg z-[1000] pointer-events-none">
-          <p className="text-sm font-semibold">Click on the map to set a location</p>
+          <p className="text-sm font-semibold">
+            Click on the map to set a location
+          </p>
         </div>
       )}
     </div>
