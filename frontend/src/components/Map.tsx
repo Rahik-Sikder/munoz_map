@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import {
   MapContainer,
-  TileLayer,
   Marker,
   Popup,
   Polyline,
@@ -9,6 +8,7 @@ import {
 } from "react-leaflet";
 import type { Entry } from "../types";
 import L from "leaflet";
+import { maptilerLayer } from "@maptiler/leaflet-maptilersdk";
 
 // Custom marker icon factory
 const createCustomIcon = (isSelected: boolean, isSelectedObject: boolean) => {
@@ -111,6 +111,24 @@ function MapController({
   return null;
 }
 
+// Component to add MapTiler vector tile layer
+function MapTilerLayer() {
+  const map = useMap();
+
+  useEffect(() => {
+    const layer = maptilerLayer({
+      apiKey: import.meta.env.VITE_MAPTILER_KEY,
+      style: "topo-v4",
+    }).addTo(map);
+
+    return () => {
+      map.removeLayer(layer);
+    };
+  }, [map]);
+
+  return null;
+}
+
 // Component to render chronological path with directional arrows
 function PathLine({ entries }: { entries: Entry[] }) {
   const path = getChronologicalPath(entries);
@@ -153,12 +171,7 @@ export default function Map({
       className={`h-full w-full ${className}`}
       scrollWheelZoom={true}
     >
-      <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        maxZoom={18}
-        className="vintage-map-tiles"
-      />
+      <MapTilerLayer />
 
       {entries.map((entry) => {
         const isSelectedObject = Boolean(
