@@ -31,9 +31,6 @@ WORKDIR /app
 # Copy binary from builder
 COPY --from=builder /app/server .
 
-# Copy data file
-COPY data.json .
-
 # Expose port
 EXPOSE 8080
 
